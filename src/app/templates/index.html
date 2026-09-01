@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <!-- 간단하고 깔끔한 스타일을 위해 CDN CSS 적용 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 헤더 영역 -->
+    <header class="bg-blue-600 text-white shadow-md p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">🌊 Local Synergy Maker</h1>
+            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full">거제시 실증 모델</span>
+        </div>
+    </header>
+
+    <!-- 본문 컨테이너 -->
+    <main class="container mx-auto mt-8 p-4">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">환영합니다! 👋</h2>
+            <p class="text-gray-600 mb-4">
+                FastAPI와 Jinja2 템플릿으로 구동되는 거제시 로컬 관광 활성화 정책 시뮬레이터 첫 화면입니다.
+            </p>
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
+                <strong>다음 단계:</strong> 여기에 거제도 지도(Leaflet.js)와 교통 고립도(TII)/상권 다양성(CEI) 분석 결과를 시각화할 예정입니다.
+            </div>
+        </div>
+    </main>
+</body>
+</html>
