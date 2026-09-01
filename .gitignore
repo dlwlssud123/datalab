@@ -2,6 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Data directory
+data/
+
+# Environments & Secrets
+.env
+.env.*
 .venv/
 env/
 venv/
