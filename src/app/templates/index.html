@@ -4,29 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <!-- 간단하고 깔끔한 스타일을 위해 CDN CSS 적용 -->
+    <!-- Tailwind CSS (스타일) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 1. Leaflet.js 지도 라이브러리 CDN 추가 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* 지도가 들어갈 영역 높이 지정 (필수!) */
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <!-- 헤더 영역 -->
+    <!-- 상단 헤더 -->
     <header class="bg-blue-600 text-white shadow-md p-4">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold">🌊 Local Synergy Maker</h1>
-            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full">거제시 실증 모델</span>
+            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full font-medium">거제시 관광-교통 시뮬레이터</span>
         </div>
     </header>
 
-    <!-- 본문 컨테이너 -->
-    <main class="container mx-auto mt-8 p-4">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">환영합니다! 👋</h2>
-            <p class="text-gray-600 mb-4">
-                FastAPI와 Jinja2 템플릿으로 구동되는 거제시 로컬 관광 활성화 정책 시뮬레이터 첫 화면입니다.
-            </p>
-            <div class="p-4 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
-                <strong>다음 단계:</strong> 여기에 거제도 지도(Leaflet.js)와 교통 고립도(TII)/상권 다양성(CEI) 분석 결과를 시각화할 예정입니다.
+    <!-- 대시보드 본문 -->
+    <main class="container mx-auto mt-6 p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- 왼쪽: 지도가 들어갈 메인 카드 (2칸 차지) -->
+            <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-gray-800">🗺️ 거제시 관광 거점 지도</h2>
+                    <span class="text-xs text-gray-500">Leaflet OpenStreetMap</span>
+                </div>
+                <!-- 지도가 렌더링될 div -->
+                <div id="map"></div>
             </div>
+
+            <!-- 오른쪽: 컨트롤 패널 및 정보창 (1칸 차지) -->
+            <div class="bg-white p-4 rounded-lg shadow-lg flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-3">⚙️ 시뮬레이션 제어판</h2>
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900 mb-4">
+                        💡 <strong>거점 안내</strong><br>
+                        - 출발지: 🏢 고현버스터미널 (중심지)<br>
+                        - 외곽지: 🚩 바람의 언덕, 매미성 등
+                    </div>
+                    <p class="text-xs text-gray-500">다음 단계에서 백엔드 API로부터 TII(교통고립도) 데이터를 받아와 지도에 표시합니다.</p>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-400 text-center">
+                    2026 한국관광 데이터랩 경진대회
+                </div>
+            </div>
+
         </div>
     </main>
+
+    <!-- 2. Leaflet 지도 초기화 자바스크립트 -->
+    <script>
+        // 거제시 중심 좌표 (위도: 34.8806, 경도: 128.6211)
+        const geojeCenter = [34.8806, 128.6211];
+        
+        // 지도를 #map 엘리먼트에 생성하고 줌 레벨 11로 설정
+        const map = L.map('map').setView(geojeCenter, 11);
+
+        // OpenStreetMap 오픈 지도 타일 레이어 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // 테스트 마커 1: 고현버스터미널 (출발 거점)
+        const gohyeonMarker = L.marker([34.8893, 128.6225]).addTo(map)
+            .bindPopup("<b>🏢 고현버스터미널</b><br>거제 대중교통의 중심 출발지").openPopup();
+
+        // 테스트 마커 2: 바람의 언덕 (외곽 관광지)
+        const windHillMarker = L.marker([34.7618, 128.6247]).addTo(map)
+            .bindPopup("<b>🚩 바람의 언덕 (남부면)</b><br>배차간격 90분+ 외곽 고립 관광지");
+
+        // 테스트 마커 3: 매미성 (북부 관광지)
+        const maemiMarker = L.marker([34.9818, 128.7186]).addTo(map)
+            .bindPopup("<b>🚩 매미성 (장목면)</b><br>인기 포토스팟 외곽지");
+    </script>
 </body>
 </html>
