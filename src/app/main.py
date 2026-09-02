@@ -1,3 +1,4 @@
+import pandas as pd
 from pathlib import Path
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Request
@@ -35,65 +36,20 @@ class TourismSpot(BaseModel):
     status: str # 상태 (isolated, normal, hub 등)
     description: str # 설명 (선택 사항)
     
-# 거제시 실제 데이터 기반 샘플 데이터셋 (나중에 data/에서 로드)
-SPOTS_DATA = [
-    {
-        "id": "gohyeon_terminal",
-        "name": "고현버스터미널 (도심 거점)",
-        "category": "hub",
-        "lat": 34.8893,
-        "lng": 128.6225,
-        "visitors_monthly": 185000,
-        "tmap_search_rank": 1,
-        "bus_interval_min": 10,
-        "tii_score": 0.12,
-        "cei_score": 0.55,
-        "status": "hub",
-        "description": "거제도 교통의 출발점. 시외버스 터미널 및 중심 상권 밀집."
-    },
-    {
-        "id": "wind_hill",
-        "name": "바람의 언덕 / 신선대 (남부면)",
-        "category": "attraction",
-        "lat": 34.7618,
-        "lng": 128.6247,
-        "visitors_monthly": 92000,
-        "tmap_search_rank": 2,
-        "bus_interval_min": 110,
-        "tii_score": 0.88,
-        "cei_score": 0.42,
-        "status": "isolated",
-        "description": "Tmap 검색 2위 대표 명소이나, 시내버스 배차 110분으로 극심한 교통 고립지."
-    },
-    {
-        "id": "maemi_castle",
-        "name": "매미성 (장목면)",
-        "category": "attraction",
-        "lat": 34.9818,
-        "lng": 128.7186,
-        "visitors_monthly": 78000,
-        "tmap_search_rank": 3,
-        "bus_interval_min": 85,
-        "tii_score": 0.74,
-        "cei_score": 0.48,
-        "status": "isolated",
-        "description": "젊은 층 인기 포토스팟. 외곽 해안가에 위치해 대중교통 접근성 취약."
-    },
-    {
-        "id": "gujora_beach",
-        "name": "구조라 해수욕장 / 샛바람소리길 (일운면)",
-        "category": "attraction",
-        "lat": 34.8118,
-        "lng": 128.6836,
-        "visitors_monthly": 45000,
-        "tmap_search_rank": 6,
-        "bus_interval_min": 60,
-        "tii_score": 0.58,
-        "cei_score": 0.61,
-        "status": "normal",
-        "description": "해양 레저 및 로컬 골목길이 공존하는 잠재 앵커 스팟."
-    }
-]    
+PROCESSED_CSV_PATH = BASE_DIR.parent.parent / "data" / "processed" / "geoje_real_spots.csv"
+   
+def loat_processed_spots():
+    """
+    전처리된 관광지 데이터를 로드하여 딕셔너리 리스트로 변환
+    """
+    if PROCESSED_CSV_PATH.exists():
+        df = pd.read_csv(PROCESSED_CSV_PATH)
+        return df.fillna("").to_dict(orient="records") 
+    else:
+        print(f"Warning: Processed CSV file not found at {PROCESSED_CSV_PATH}. Returning empty list.")
+        return []
+    
+SPOTS_DATA = loat_processed_spots()
     
 # 5. 메인 화면 렌더링 라우터
 @app.get("/")
