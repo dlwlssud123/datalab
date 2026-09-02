@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <!-- Tailwind CSS (스타일) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 1. Leaflet.js 지도 라이브러리 CDN 추가 -->
+    <!-- Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* 지도가 들어갈 영역 높이 지정 (필수!) */
         #map {
-            height: 600px;
+            height: 650px;
             width: 100%;
             border-radius: 0.5rem;
         }
@@ -24,8 +23,11 @@
     <!-- 상단 헤더 -->
     <header class="bg-blue-600 text-white shadow-md p-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold">🌊 Local Synergy Maker</h1>
-            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full font-medium">거제시 관광-교통 시뮬레이터</span>
+            <div>
+                <h1 class="text-2xl font-bold">🌊 Local Synergy Maker</h1>
+                <p class="text-xs text-blue-200 mt-1">한국관광 데이터랩 빅데이터 기반 거제시 교통 고립지 및 상권 시뮬레이터</p>
+            </div>
+            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full font-medium">B2G 실증 모델</span>
         </div>
     </header>
 
@@ -33,29 +35,32 @@
     <main class="container mx-auto mt-6 p-4">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- 왼쪽: 지도가 들어갈 메인 카드 (2칸 차지) -->
-            <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow-lg">
+            <!-- 왼쪽: Leaflet 지도 (2칸 차지) -->
+            <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow-lg flex flex-col justify-between">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold text-gray-800">🗺️ 거제시 관광 거점 지도</h2>
-                    <span class="text-xs text-gray-500">Leaflet OpenStreetMap</span>
+                    <h2 class="text-lg font-bold text-gray-800">🗺️ 거제시 관광 거점 진단 지도</h2>
+                    <div class="flex items-center space-x-3 text-xs">
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block mr-1"></span>도심 거점</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 inline-block mr-1"></span>교통 고립지(TII 위험)</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block mr-1"></span>일반 명소</span>
+                    </div>
                 </div>
-                <!-- 지도가 렌더링될 div -->
                 <div id="map"></div>
             </div>
 
-            <!-- 오른쪽: 컨트롤 패널 및 정보창 (1칸 차지) -->
-            <div class="bg-white p-4 rounded-lg shadow-lg flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-gray-800 mb-3">⚙️ 시뮬레이션 제어판</h2>
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900 mb-4">
-                        💡 <strong>거점 안내</strong><br>
-                        - 출발지: 🏢 고현버스터미널 (중심지)<br>
-                        - 외곽지: 🚩 바람의 언덕, 매미성 등
-                    </div>
-                    <p class="text-xs text-gray-500">다음 단계에서 백엔드 API로부터 TII(교통고립도) 데이터를 받아와 지도에 표시합니다.</p>
+            <!-- 오른쪽: 분석 데이터 카드 목록 (1칸 차지) -->
+            <div class="bg-white p-4 rounded-lg shadow-lg flex flex-col h-[650px]">
+                <div class="border-b pb-3 mb-3">
+                    <h2 class="text-lg font-bold text-gray-800">📊 거점 분석 데이터 리스트</h2>
+                    <p class="text-xs text-gray-500">카드를 클릭하면 지도 위치로 이동합니다.</p>
                 </div>
                 
-                <div class="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-400 text-center">
+                <!-- 백엔드 API 데이터를 동적으로 채울 리스트 영역 (스크롤 가능) -->
+                <div id="spotList" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                    <div class="text-sm text-gray-400 text-center py-8">데이터 로딩 중... ⏳</div>
+                </div>
+
+                <div class="pt-3 border-t text-xs text-gray-400 text-center">
                     2026 한국관광 데이터랩 경진대회
                 </div>
             </div>
@@ -63,31 +68,101 @@
         </div>
     </main>
 
-    <!-- 2. Leaflet 지도 초기화 자바스크립트 -->
+    <!-- 🌟 JavaScript: API 호출 및 지도 시각화 -->
     <script>
-        // 거제시 중심 좌표 (위도: 34.8806, 경도: 128.6211)
-        const geojeCenter = [34.8806, 128.6211];
-        
-        // 지도를 #map 엘리먼트에 생성하고 줌 레벨 11로 설정
-        const map = L.map('map').setView(geojeCenter, 11);
-
-        // OpenStreetMap 오픈 지도 타일 레이어 추가
+        // 1. 거제시 중심 지도 생성
+        const map = L.map('map').setView([34.8806, 128.6211], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 테스트 마커 1: 고현버스터미널 (출발 거점)
-        const gohyeonMarker = L.marker([34.8893, 128.6225]).addTo(map)
-            .bindPopup("<b>🏢 고현버스터미널</b><br>거제 대중교통의 중심 출발지").openPopup();
+        // 생성된 마커들을 관리할 객체
+        const markers = {};
 
-        // 테스트 마커 2: 바람의 언덕 (외곽 관광지)
-        const windHillMarker = L.marker([34.7618, 128.6247]).addTo(map)
-            .bindPopup("<b>🚩 바람의 언덕 (남부면)</b><br>배차간격 90분+ 외곽 고립 관광지");
+        // 2. 백엔드 FastAPI의 /api/spots 엔드포인트 호출
+        async function loadSpots() {
+            try {
+                const response = await fetch('/api/spots');
+                const spots = await response.json();
 
-        // 테스트 마커 3: 매미성 (북부 관광지)
-        const maemiMarker = L.marker([34.9818, 128.7186]).addTo(map)
-            .bindPopup("<b>🚩 매미성 (장목면)</b><br>인기 포토스팟 외곽지");
+                const spotListContainer = document.getElementById('spotList');
+                spotListContainer.innerHTML = ''; // 로딩 문구 제거
+
+                // 각 거점 데이터를 순회하며 마커와 카드 생성
+                spots.forEach(spot => {
+                    // (1) 상태에 따른 색상 및 스타일 결정
+                    let color = '#10B981'; // 기본: 에메랄드(녹색)
+                    let statusBadge = '<span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">정상</span>';
+
+                    if (spot.status === 'hub') {
+                        color = '#3B82F6'; // 파란색
+                        statusBadge = '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">출발 거점</span>';
+                    } else if (spot.status === 'isolated') {
+                        color = '#EF4444'; // 빨간색 (교통 고립 경고)
+                        statusBadge = '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">고립 경고 (TII 高)</span>';
+                    }
+
+                    // (2) 지도 위에 예쁜 원형 마커(circleMarker) 그리기
+                    const marker = L.circleMarker([spot.lat, spot.lng], {
+                        radius: 10,
+                        fillColor: color,
+                        color: '#FFFFFF',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.85
+                    }).addTo(map);
+
+                    // 팝업 내용 설정 (클릭 시 표시)
+                    marker.bindPopup(`
+                        <div class="p-1">
+                            <h3 class="font-bold text-sm text-gray-900 mb-1">${spot.name}</h3>
+                            <p class="text-xs text-gray-600 mb-2">${spot.description}</p>
+                            <div class="text-xs space-y-1 bg-gray-50 p-2 rounded border">
+                                <div><strong>🚌 배차간격:</strong> <span class="${spot.bus_interval_min >= 80 ? 'text-red-600 font-bold' : ''}">${spot.bus_interval_min}분</span></div>
+                                <div><strong>📊 교통고립도(TII):</strong> <span class="font-semibold text-purple-700">${spot.tii_score}</span></div>
+                                <div><strong>🏪 상권다양성(CEI):</strong> <span class="font-semibold text-indigo-700">${spot.cei_score}</span></div>
+                                <div><strong>👥 월간 방문자:</strong> ${spot.visitors_monthly.toLocaleString()}명 (Tmap ${spot.tmap_search_rank}위)</div>
+                            </div>
+                        </div>
+                    `);
+
+                    markers[spot.id] = marker;
+
+                    // (3) 오른쪽 리스트에 카드 엘리먼트 추가
+                    const card = document.createElement('div');
+                    card.className = "p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 rounded-lg cursor-pointer transition duration-150";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-sm text-gray-800">${spot.name}</h4>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-xs text-gray-600 grid grid-cols-2 gap-1 mt-2">
+                            <div>배차: <strong>${spot.bus_interval_min}분</strong></div>
+                            <div>TII 고립도: <strong>${spot.tii_score}</strong></div>
+                            <div>CEI 다양성: <strong>${spot.cei_score}</strong></div>
+                            <div>방문객: <strong>${(spot.visitors_monthly/10000).toFixed(1)}만명</strong></div>
+                        </div>
+                    `;
+
+                    // 카드 클릭 시 해당 위치로 지도 이동 및 팝업 열기
+                    card.addEventListener('click', () => {
+                        map.flyTo([spot.lat, spot.lng], 13, { duration: 1.2 });
+                        marker.openPopup();
+                    });
+
+                    spotListContainer.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("데이터 로드 실패:", error);
+                document.getElementById('spotList').innerHTML = 
+                    '<div class="text-red-500 text-sm text-center py-4">데이터를 불러오는 중 오류가 발생했습니다.</div>';
+            }
+        }
+
+        // 페이지 로드 시 백엔드 API 실행
+        loadSpots();
     </script>
 </body>
 </html>
