@@ -342,8 +342,8 @@ def build_final_dataset(df_spots_rank, town_entropy, bus_metrics):
             "id": "maemi_castle",
             "name": "매미성 (장목면)",
             "category": "attraction",
-            "lat": 34.9859,
-            "lng": 128.6946,
+            "lat": 34.9672,
+            "lng": 128.7046,
             "town": "장목면",
             "bus_interval_min": 95,   # 직통 부재, 환승 대기 포함
             "bus_routes_count": 1,
