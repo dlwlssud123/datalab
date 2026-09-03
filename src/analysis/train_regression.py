@@ -27,7 +27,8 @@ print("=" * 65)
 df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
 print(f"✅ 실측 거점 데이터 로드 완료 ({len(df)}개 거점)")
 for _, row in df.iterrows():
-    print(f"  - {row['spot_name']:<12} | 배차: {row['bus_interval_min']}분 | 상권CEI: {row['diversity_entropy']:.2f} | 공실률: {row['vacancy_rate']:.1%}")
+    print(f"  - {row['name']:<24} | 배차: {row['bus_interval_min']:>3}분 | 상권CEI: {row['cei_score']:.2f} | TII고립도: {row['tii_score']:.2f}")
+
 
 # 3. 실증 탄력성(Elasticity) 기반 데이터셋 모델링
 #   - 배차간격 10분 단축 시 체류시간 약 +15~25분 증가 (접근성 향상 및 여유 시간 확보)
