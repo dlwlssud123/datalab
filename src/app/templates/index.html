@@ -67,7 +67,7 @@
                 deficit: '로컬 굿즈·F&B·체험 3.5%',
                 ceiTag: 'CEI 0.64 (편중)',
                 origInterval: 95,
-                origTii: 0.37,
+                origTii: 0.90,
                 origCei: 0.64
             },
             'wind_hill': {
@@ -75,11 +75,11 @@
                 town: '남부면',
                 title: '남부면 (바람의 언덕 / 신선대)',
                 badge: '🌟 외지인 검색 1위 명소 (전체 2위)',
-                busRoute: '55번 · 54번 · 55-1번 · 67-1번 (해금강 방면 4개 계통)',
-                busRuns: '전 노선 통합 1일 14회 (정오/오후 배차공백 90~120분)',
+                busRoute: '55번 · 55-1번 (해금강 방면 관측 노선)',
+                busRuns: '엑셀 자동 산출 관측 7회 (07:15~20:05, 중앙 배차 125분)',
                 busLast: '막차 18:20~18:40 (조기 단절)',
-                busIntervalText: '배차 120분 공백',
-                busDesc: '노선은 여럿이나 굴곡 노선 및 정오/오후 2시간 배차 공백 심각',
+                busIntervalText: '중앙 배차 125분',
+                busDesc: '고현 출발 해금강 방면 시간표 기준, 관광지 도착 방향의 배차 공백이 큼',
                 taxiDistance: '28.5 km',
                 taxiTime: '약 35분',
                 taxiOneWay: '약 33,000원',
@@ -89,7 +89,7 @@
                 overcrowded: '횟집 58.2% + 숙박 27.7% (집중 과밀)',
                 deficit: '문화·체험·청년공방 1.1% (극심한 결핍)',
                 ceiTag: 'CEI 0.65 (위험)',
-                origInterval: 120,
+                origInterval: 125,
                 origTii: 0.95,
                 origCei: 0.65
             },
@@ -98,10 +98,10 @@
                 town: '동부면',
                 title: '동부면 (학동 흑진주 몽돌해변)',
                 badge: '🟡 계절 편중성 & 노후 숙박 밀집 상권',
-                busRoute: '56번 · 67번 · 55번 (학동 경유 다수 노선)',
-                busRuns: '통합 1일 22회 (평균 배차 50~80분)',
+                busRoute: '55번 · 67번 · 67-1번 (학동 경유 관측 노선)',
+                busRuns: '엑셀 자동 산출 관측 13회 (06:20~19:55, 중앙 배차 65분)',
                 busLast: '막차 19:40',
-                busIntervalText: '배차 80분 지연',
+                busIntervalText: '중앙 배차 65분',
                 busDesc: '경유 노선은 많으나 주말 관광객 자가용 정체로 정시성 취약',
                 taxiDistance: '21.8 km',
                 taxiTime: '약 28분',
@@ -112,8 +112,8 @@
                 overcrowded: '노후 펜션·민박 51.3% + 일반음식 36%',
                 deficit: '복합 문화공간·청년 숍 2.4%',
                 ceiTag: 'CEI 0.63 (노후)',
-                origInterval: 80,
-                origTii: 0.13,
+                origInterval: 65,
+                origTii: 0.52,
                 origCei: 0.63
             },
             'geoje_jungle_dome': {
@@ -121,11 +121,11 @@
                 town: '거제면',
                 title: '거제면 (정글돔 / 식물원)',
                 badge: '🟡 우회 노선 다수 & 면소재지 상권 단절',
-                busRoute: '52번 · 53번 · 51번 계통',
-                busRuns: '통합 1일 16회 (정글돔 바로 앞 경유는 9회, 배차 110분)',
+                busRoute: '50-2번 (식물원/외간교회 기준 관측 노선)',
+                busRuns: '엑셀 자동 산출 관측 7회 (08:05~20:05, 중앙 배차 120분)',
                 busLast: '막차 18:50',
-                busIntervalText: '배차 110분 간격',
-                busDesc: '대부분 면소재지 경유라 정글돔 입구까지 도보 이동 필요',
+                busIntervalText: '중앙 배차 120분',
+                busDesc: '식물원/외간교회 정류장 기준 자동 산출, 목적지 접근 방향 배차가 긴 편',
                 taxiDistance: '12.4 km',
                 taxiTime: '약 16분',
                 taxiOneWay: '약 15,000원',
@@ -135,8 +135,8 @@
                 overcrowded: '전통 한식 44% + 농자재·소매 35%',
                 deficit: '관광 연계 디저트·체험 4.8%',
                 ceiTag: 'CEI 0.82 (면소재지)',
-                origInterval: 110,
-                origTii: 0.24,
+                origInterval: 120,
+                origTii: 0.83,
                 origCei: 0.82
             }
         };
@@ -165,7 +165,7 @@
                 reason: '사진만 찍고 빠져나가는 당일치기 관광객을 도장포 포구 1km 보행권 내 로컬 식음료 공간에 안착시켜 소비 지출 증대.'
             },
             'hakdong_pebble': {
-                badge: '비수기 공실률 14.2%',
+                badge: '공실률: 경남 집합상가 12.7% 기준',
                 deficits: [
                     '사계절 복합 문화공간 (결핍도 89%): 여름 해수욕 외 비수기 방문 유인 시설 전무',
                     '로컬 크래프트 숍 (결핍도 85%): 몽돌 테마 업사이클링 공예 시설 부족'
@@ -188,6 +188,35 @@
             }
         };
 
+        const getBusSourceLabel = (source) => {
+            if (source === 'excel_auto') return '엑셀 자동 산출';
+            if (source === 'fallback') return '기준값 유지';
+            return '기준 데이터';
+        };
+
+        const getBusEvidenceText = (spot) => {
+            if (!spot.bus_schedule_source) return '';
+            const sourceLabel = getBusSourceLabel(spot.bus_schedule_source);
+            if (spot.bus_schedule_source === 'fallback') {
+                return sourceLabel + (spot.bus_schedule_note ? ' · ' + spot.bus_schedule_note : '');
+            }
+            const runText = spot.observed_runs_count ? ' · 관측 ' + spot.observed_runs_count + '회' : '';
+            const timeText = spot.first_bus_time && spot.last_bus_time ? ' · ' + spot.first_bus_time + '~' + spot.last_bus_time : '';
+            return sourceLabel + runText + timeText;
+        };
+
+        const getTiiEvidenceHtml = (spot) => {
+            if (!spot.tii_formula_basis) return '';
+            const demand = spot.tii_demand_pressure ? Number(spot.tii_demand_pressure).toLocaleString() : null;
+            const supply = spot.tii_supply_index ? Number(spot.tii_supply_index).toFixed(2) : null;
+            const parts = [];
+            if (demand) parts.push('수요압력 ' + demand);
+            if (supply) parts.push('공급지수 ' + supply);
+            if (spot.walk_distance_m) parts.push('도보 ' + spot.walk_distance_m + 'm');
+            const detail = parts.length ? '<br/><span style="color: #64748b; font-size: 12px;">' + parts.join(' · ') + '</span>' : '';
+            return '<div style="margin-top: 4px; color: #475569;">TII 근거: <b>' + spot.tii_formula_basis + '</b>' + detail + '</div>';
+        };
+
         function App() {
             const [spots, setSpots] = useState([]);
             const [selectedSpotId, setSelectedSpotId] = useState('maemi_castle');
@@ -206,6 +235,7 @@
             const markersRef = useRef([]);
 
             const currentProfile = REAL_SPOT_PROFILES[selectedSpotId] || REAL_SPOT_PROFILES['maemi_castle'];
+            const currentSpotData = spots.find(spot => spot.id === selectedSpotId);
             const currentCommAnalysis = SPOT_COMMERCIAL_ANALYSIS[selectedSpotId] || SPOT_COMMERCIAL_ANALYSIS['maemi_castle'];
 
             useEffect(() => {
@@ -244,14 +274,30 @@
                                 fillOpacity: 0.9
                             }).addTo(mapRef.current);
 
+                            const busEvidence = getBusEvidenceText(spot);
+                            const busBasis = spot.bus_stop_basis
+                                ? '<div style="color: #475569;">산출 기준: <b>' + spot.bus_stop_basis + '</b></div>'
+                                : '';
+                            const busRoutes = spot.bus_route_numbers
+                                ? '<div style="color: #475569;">노선: <b>' + spot.bus_route_numbers + '</b></div>'
+                                : '';
+                            const busEvidenceHtml = busEvidence
+                                ? '<div style="margin-top: 4px; color: #64748b; font-size: 12px;">' + busEvidence + '</div>' + busBasis + busRoutes
+                                : '';
+                            const vacancyEvidenceHtml = spot.vacancy_rate_pct
+                                ? '<div style="margin-top: 4px; color: #475569; font-size: 12px;">공실률 기준: <b>' + spot.vacancy_rate_pct + '%</b> <span style="color: #64748b;">(' + spot.vacancy_market_name + ' ' + spot.vacancy_rate_quarter + ')</span></div>'
+                                : '';
+
                             marker.bindPopup(`
                                 <div style="padding: 4px; font-size: 13px; line-height: 1.5;">
                                     <strong style="font-size: 14px; color: #0f172a;">${spot.name}</strong><br/>
                                     <span style="color: #64748b;">${spot.description}</span><br/>
                                     <hr style="margin: 6px 0; border-color: #e2e8f0;"/>
                                     <div>버스 배차: <b>${spot.bus_interval_min}분</b></div>
+                                    ${busEvidenceHtml}
                                     <div>교통 고립도(TII): <b style="color: #dc2626;">${spot.tii_score}</b></div>
                                     <div>상권 다양성(CEI): <b style="color: #4f46e5;">${spot.cei_score}</b></div>
+                                    ${vacancyEvidenceHtml}
                                     <div>월간 방문객: <b>${Number(spot.visitors_monthly).toLocaleString()}명</b></div>
                                 </div>
                             `);
@@ -290,16 +336,20 @@
                     const commData = await commRes.json();
 
                     const newInterval = trafData.new_interval_min;
-                    const deltaInterval = currentProfile.origInterval - newInterval;
-                    const newTii = Math.max(0.1, Number((currentProfile.origTii * (newInterval / currentProfile.origInterval)).toFixed(2)));
-                    const tiiImprovePct = Math.round(((currentProfile.origTii - newTii) / currentProfile.origTii) * 100);
+                    const baselineInterval = Number(currentSpotData?.bus_interval_min ?? currentProfile.origInterval);
+                    const baselineTii = Number(currentSpotData?.tii_score ?? currentProfile.origTii);
+                    const baselineCei = Number(currentSpotData?.cei_score ?? currentProfile.origCei);
+                    const deltaInterval = baselineInterval - newInterval;
+                    const newTii = Math.max(0.1, Number((baselineTii * (newInterval / baselineInterval)).toFixed(2)));
+                    const tiiImprovePct = Math.round(((baselineTii - newTii) / baselineTii) * 100);
 
                     const newCei = commData.simulated_cei;
-                    const deltaCei = Math.max(0, newCei - currentProfile.origCei);
+                    const deltaCei = Math.max(0, newCei - baselineCei);
 
                     const stayGainFromInterval = 2.13 * deltaInterval;
                     const stayGainFromCei = 411.8 * deltaCei;
-                    const stayGainFromVac = 121.9 * (0.03 * storeCount);
+                    const deltaVacancy = Math.max(0, Number(commData.vacancy_change_pctp ?? 0) / 100);
+                    const stayGainFromVac = 121.9 * deltaVacancy;
                     const totalStayGain = Math.round(stayGainFromInterval + stayGainFromCei + stayGainFromVac + 10.06);
 
                     if (routeLineRef.current && mapRef.current) {
@@ -316,32 +366,40 @@
 
                     setFusionResult({
                         spotName: currentProfile.title,
-                        origInterval: currentProfile.origInterval,
+                        origInterval: baselineInterval,
                         newInterval: newInterval,
                         deltaInterval: deltaInterval,
-                        origTii: currentProfile.origTii,
+                        origTii: baselineTii,
                         newTii: newTii,
                         tiiImprovePct: tiiImprovePct,
-                        origCei: currentProfile.origCei,
+                        origCei: baselineCei,
                         newCei: newCei,
                         ceiChangePct: commData.cei_change_percent,
                         categoryName: commData.selected_category_name,
                         storeCount: storeCount,
+                        origVacancyRate: commData.original_vacancy_rate_pct,
+                        newVacancyRate: commData.simulated_vacancy_rate_pct,
+                        vacancyChangePctp: commData.vacancy_change_pctp,
+                        vacancyRateBasis: commData.vacancy_rate_basis,
                         totalStayGain: totalStayGain,
-                        formulaText: `ΔStay = (2.13 × ${deltaInterval}m) + (411.8 × ${deltaCei.toFixed(2)}) + (121.9 × ΔV) + 10.06`,
+                        formulaText: `정책효과 추정식: ΔStay = (2.13 × ${deltaInterval}m) + (411.8 × ${deltaCei.toFixed(2)}) + (121.9 × ${deltaVacancy.toFixed(2)}) + 10.06`,
                         reportPayload: {
                             town_name: currentProfile.town,
                             spot_name: currentProfile.title,
-                            original_interval: currentProfile.origInterval,
+                            original_interval: baselineInterval,
                             new_interval: newInterval,
-                            original_tii: currentProfile.origTii,
+                            original_tii: baselineTii,
                             simulated_tii: newTii,
                             category_name: commData.selected_category_name,
                             store_count: storeCount,
-                            original_cei: currentProfile.origCei,
+                            original_cei: baselineCei,
                             simulated_cei: newCei,
                             cei_change_percent: commData.cei_change_percent,
-                            expected_stay_increase_min: totalStayGain
+                            expected_stay_increase_min: totalStayGain,
+                            original_vacancy_rate_pct: commData.original_vacancy_rate_pct,
+                            simulated_vacancy_rate_pct: commData.simulated_vacancy_rate_pct,
+                            vacancy_change_pctp: commData.vacancy_change_pctp,
+                            vacancy_rate_basis: commData.vacancy_rate_basis
                         }
                     });
 
@@ -471,7 +529,13 @@
                                                             <td className="py-3 px-3.5 font-bold text-slate-900">{spot.name}</td>
                                                             <td className="py-3 px-2.5 text-center font-extrabold text-purple-700 text-xs">{rankBadge}</td>
                                                             <td className={`py-3 px-2.5 text-center font-bold ${spot.bus_interval_min >= 90 ? 'text-red-600' : 'text-slate-700'}`}>
-                                                                {spot.bus_interval_min}분
+                                                                <div>{spot.bus_interval_min}분</div>
+                                                                {spot.bus_schedule_source && (
+                                                                    <div className="mt-1 text-[11px] font-semibold text-slate-400 leading-snug">
+                                                                        {getBusSourceLabel(spot.bus_schedule_source)}
+                                                                        {spot.observed_runs_count ? ' · ' + spot.observed_runs_count + '회' : ''}
+                                                                    </div>
+                                                                )}
                                                             </td>
                                                             <td className="py-3 px-2.5 text-center">
                                                                 <span className={`px-2.5 py-1 rounded-md text-xs font-extrabold ${spot.tii_score >= 0.7 ? 'bg-red-100 text-red-700' : spot.tii_score >= 0.3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
@@ -702,14 +766,15 @@
                                                                 {fusionResult.origCei} → {fusionResult.newCei}
                                                                 <span className="text-xs text-indigo-500 ml-1">(+{fusionResult.ceiChangePct}%)</span>
                                                             </div>
-                                                            <div className="text-xs text-slate-400 mt-1">500m~1km 공실 {fusionResult.storeCount}개소 창업</div>
+                                                            <div className="text-xs text-slate-400 mt-1">공실률 {fusionResult.origVacancyRate}% → {fusionResult.newVacancyRate}% 추정</div>
+                                                            <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{fusionResult.vacancyRateBasis}</div>
                                                         </div>
 
                                                         {/* 체류시간 증가 하이라이트 (초대형 글자) */}
                                                         <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-emerald-300 col-span-2">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-slate-700 font-extrabold text-sm flex items-center">
-                                                                    <span className="mr-1.5">🎯</span> 체류시간 증가 (NumPy Ridge):
+                                                                    <span className="mr-1.5">🎯</span> 체류시간 증가 추정:
                                                                 </span>
                                                                 <span className="text-2xl md:text-3xl font-black text-emerald-600">
                                                                     +{fusionResult.totalStayGain}분
@@ -719,7 +784,7 @@
                                                                 </span>
                                                             </div>
                                                             <div className="text-xs text-slate-400 font-mono mt-1.5 border-t border-slate-100 pt-1.5">
-                                                                📐 {fusionResult.formulaText}
+                                                                {fusionResult.formulaText}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -801,8 +866,8 @@
                                 {isReportLoading ? (
                                     <div className="p-16 text-center space-y-4">
                                         <div className="animate-spin rounded-full h-14 w-14 border-4 border-indigo-600 border-t-transparent mx-auto"></div>
-                                        <div className="text-base font-bold text-slate-800">TII×CEI 실측 빅데이터 및 머신러닝 회귀 모델 기반 행정 기획서 작성 중...</div>
-                                        <div className="text-xs text-slate-400">거제시 외곽 관광지 교통 단절 해소 및 500m~1km 보행 벨트 상권 조례 제언</div>
+                                        <div className="text-base font-bold text-slate-800">TII×CEI 기준지표와 정책효과 추정식을 바탕으로 행정 기획서 작성 중...</div>
+                                        <div className="text-xs text-slate-400">거제시 외곽 관광지 교통 단절 해소 및 500m~1km 보행 벨트 상권 정책 제언</div>
                                     </div>
                                 ) : (
                                     /* 보고서 본문 내용 */
@@ -839,3 +904,6 @@
     {% endraw %}
 </body>
 </html>
+
+
+

@@ -1,10 +1,12 @@
 {
-  "model_name": "NumPy_Ridge_Tourism_Stay_Predictor",
+  "model_name": "NumPy_Ridge_Tourism_Stay_Scenario_Estimator",
   "r2_score": 0.9832,
   "rmse": 9.95,
   "coef_interval": 2.13,
   "coef_cei": 411.77,
   "coef_vacancy": 121.89,
   "intercept": 10.06,
-  "formula": "ΔStay = 2.13*ΔInterval + 411.8*ΔCEI + 121.9*ΔVacancy + 10.06"
+  "formula": "ΔStay = 2.13*ΔInterval + 411.8*ΔCEI + 121.9*ΔVacancy + 10.06",
+  "model_scope": "scenario_elasticity_based_policy_effect_estimator",
+  "model_note": "Generated from policy elasticity assumptions and synthetic scenario samples; use as a scenario estimator, not a field-validated prediction model."
 }

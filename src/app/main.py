@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Dict, List, Optional
 
 # 1. api 앱 인스턴스 생성
 app = FastAPI(
@@ -36,21 +37,40 @@ class TourismSpot(BaseModel):
     cei_score: float # CEI 점수
     status: str # 상태 (isolated, normal, hub 등)
     description: str # 설명 (선택 사항)
+    bus_routes_count: Optional[int] = None
+    bus_stop_basis: Optional[str] = None
+    observed_runs_count: Optional[int] = None
+    avg_gap_min: Optional[float] = None
+    max_gap_min: Optional[float] = None
+    first_bus_time: Optional[str] = None
+    last_bus_time: Optional[str] = None
+    bus_route_numbers: Optional[str] = None
+    bus_schedule_source: Optional[str] = None
+    bus_schedule_note: Optional[str] = None
+    walk_distance_m: Optional[int] = None
+    tii_demand_pressure: Optional[float] = None
+    bus_frequency_per_hour: Optional[float] = None
+    last_mile_access_index: Optional[float] = None
+    tii_supply_index: Optional[float] = None
+    tii_raw_score: Optional[float] = None
+    tii_log_score: Optional[float] = None
+    tii_formula_basis: Optional[str] = None
     
 PROCESSED_CSV_PATH = BASE_DIR.parent.parent / "data" / "processed" / "geoje_real_spots.csv"
    
-def loat_processed_spots():
+def load_processed_spots():
     """
     전처리된 관광지 데이터를 로드하여 딕셔너리 리스트로 변환
     """
     if PROCESSED_CSV_PATH.exists():
         df = pd.read_csv(PROCESSED_CSV_PATH)
-        return df.fillna("").to_dict(orient="records") 
+        df = df.astype(object).where(pd.notna(df), None)
+        return df.to_dict(orient="records")
     else:
         print(f"Warning: Processed CSV file not found at {PROCESSED_CSV_PATH}. Returning empty list.")
         return []
     
-SPOTS_DATA = loat_processed_spots()
+SPOTS_DATA = load_processed_spots()
     
 # 5. 메인 화면 렌더링 라우터
 @app.get("/")
@@ -99,6 +119,7 @@ class SimulationResponse(BaseModel):
     expected_new_visitors: int # 예상 추가 유입 관광객 수 (월간)
     carbon_reduction_kg: float # 예상 탄소 저감량 (kg)
     synergy_summary: str     # 정책 요약 리포트
+    data_basis: Dict[str, str] # 데이터 근거 (TII, CEI, 배차간격 등)
 
 # 9. 스마트 셔틀 시뮬레이션 계산 POST API
 @app.post("/api/simulate", response_model = SimulationResponse)
@@ -150,7 +171,14 @@ async def run_simulation(req: SimulationRequest):
         time_saved_percent=time_saved_percent,
         expected_new_visitors=expected_new_visitors,
         carbon_reduction_kg=carbon_reduction_kg,
-        synergy_summary=summary
+        synergy_summary=summary,
+        data_basis = {
+            "original_interval_min": "기준지표: 전처리 CSV에 저장된 관광지별 버스 배차간격",
+            "new_interval_min": "정책 시나리오: 왕복 70분을 셔틀 대수로 나누고 최소 15분으로 제한",
+            "time_saved_percent": "시나리오 계산값: 기준 배차 대비 신규 배차 감소율",
+            "expected_new_visitors": "추정값: 기준 방문자 규모 × 대기시간 단축률 × 0.35",
+            "carbon_reduction_kg": "추정값: 추가 유입객 중 40% 자가용 대체, 대체 1건당 2.5kg 감축 가정",
+        }
     )
     
 # 🌟 [새로 추가] 10. 상권 다양성 시뮬레이션 요청 & 응답 모델
@@ -158,6 +186,7 @@ class CommercialSimRequest(BaseModel):
     target_town: str         # 대상 지역 (예: '남부면', '장목면')
     store_category: str      # 입점 지원 업종 ('local_fnb', 'craft_shop', 'culture_book', 'franchise_copy')
     new_store_count: int     # 입점 점포 수 (1~5개)
+    
 class CommercialSimResponse(BaseModel):
     town_name: str           # 지역명
     selected_category_name: str # 선택한 업종명
@@ -168,6 +197,7 @@ class CommercialSimResponse(BaseModel):
     vacant_resolved_count: int # 해소된 공실 수
     policy_recommendation: str # 지자체 정책 제언
     ml_formula: str          # 적용된 머신러닝 회귀 수식
+    data_basis: Dict[str, str] # 데이터 근거 (TII, CEI, 배차간격 등)
 
 # 머신러닝 회귀 가중치 로드
 WEIGHTS_PATH = BASE_DIR.parent / "analysis" / "regression_weights.json"
@@ -250,7 +280,14 @@ async def run_commercial_simulation(req: CommercialSimRequest):
         expected_stay_increase_min=stay_increase,
         vacant_resolved_count=store_count,
         policy_recommendation=policy_msg,
-        ml_formula=formula_str
+        ml_formula=formula_str,
+        data_basis={
+            "original_cei": "기준지표: 전처리 단계에서 산출한 읍면동별 상권 엔트로피 또는 현재 기본값",
+            "simulated_cei": "정책 시나리오: 선택 업종별 엔트로피 가중치 × 입점 점포 수 반영",
+            "cei_change_percent": "시나리오 계산값: 기준 CEI 대비 변화율",
+            "expected_stay_increase_min": "추정값: 회귀식 기반 정책효과 시나리오",
+            "vacant_resolved_count": "정책 가정: 사용자가 입력한 입점 지원 점포 수",
+        }
     )
 
 # 🌟 12. 영남대 AI Gateway (Claude-sonnet-5) 기반 TII × CEI 융합 정책 자문서 생성 API
@@ -343,4 +380,4 @@ async def generate_policy_report(req: PolicyReportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Gateway 호출 오류: {str(e)}")
-
+

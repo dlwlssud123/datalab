@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[거제시 관광 데이터랩] 머신러닝 기반 체류시간(Stay Time) 예측 다중회귀 모델
+[거제시 관광 데이터랩] 정책효과 시나리오 기반 체류시간 증가 추정 회귀식
 - 의존성: scikit-learn 없이 이미 설치된 NumPy, Pandas만으로 정규방정식(Normal Equation) 직접 계산
 - 독립변수(X): 
   1. 배차간격 단축분 (ΔInterval_min)
@@ -10,9 +10,13 @@
 """
 
 import json
+import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
+
+# Windows 콘솔 한글/이모지 출력 인코딩 설정
+sys.stdout.reconfigure(encoding="utf-8")
 
 # 1. 파일 경로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -20,7 +24,7 @@ DATA_PATH = BASE_DIR / "data" / "processed" / "geoje_real_spots.csv"
 MODEL_OUTPUT_PATH = BASE_DIR / "src" / "analysis" / "regression_weights.json"
 
 print("=" * 65)
-print("📊 [머신러닝 다중회귀: NumPy OLS/Ridge] 거제시 체류시간 예측 모델")
+print("📊 [정책효과 시나리오 회귀식: NumPy Ridge] 거제시 체류시간 증가 추정")
 print("=" * 65)
 
 # 2. 실측 데이터 로드
@@ -30,7 +34,7 @@ for _, row in df.iterrows():
     print(f"  - {row['name']:<24} | 배차: {row['bus_interval_min']:>3}분 | 상권CEI: {row['cei_score']:.2f} | TII고립도: {row['tii_score']:.2f}")
 
 
-# 3. 실증 탄력성(Elasticity) 기반 데이터셋 모델링
+# 3. 정책효과 탄력성(Elasticity) 가정 기반 시나리오 데이터셋 생성
 #   - 배차간격 10분 단축 시 체류시간 약 +15~25분 증가 (접근성 향상 및 여유 시간 확보)
 #   - 상권 다양성(CEI) 0.1 상승 시 체류시간 약 +40~60분 증가 (체류 유도 시설 다변화)
 #   - 공실 해소 5%p 당 체류시간 약 +15~25분 증가
@@ -72,21 +76,21 @@ coef_interval = float(beta[1])
 coef_cei = float(beta[2])
 coef_vacancy = float(beta[3])
 
-# 예측 및 성능 평가 (R², RMSE)
+# 생성 시나리오 데이터에 대한 적합도 참고 지표 산출 (실측 검증 지표 아님)
 y_pred = np.dot(X, beta)
 ss_total = np.sum((y - np.mean(y)) ** 2)
 ss_res = np.sum((y - y_pred) ** 2)
 r2 = float(1.0 - (ss_res / ss_total))
 rmse = float(np.sqrt(np.mean((y - y_pred) ** 2)))
 
-print("\n🎯 [회귀 모델 학습 결과 (NumPy Normal Equation)]")
-print(f"  • 결정계수 (R² Score)  : {r2:.4f} (설명력 98% 이상)")
+print("\n🎯 [정책효과 추정식 계수 산출 결과 (NumPy Normal Equation)]")
+print(f"  • 결정계수 (R² Score)  : {r2:.4f} (생성 시나리오 데이터 적합도, 실측 검증 지표 아님)")
 print(f"  • 평균제곱근오차 (RMSE): {rmse:.2f}분")
-print("  • 도출된 수학적 회귀 방정식:")
+print("  • 도출된 정책효과 추정식:")
 print(f"    ΔStay = ({coef_interval:.2f} × ΔInterval) + ({coef_cei:.1f} × ΔCEI) + ({coef_vacancy:.1f} × ΔVacancy) + {intercept:.2f}")
 
-# 5. 실측 1위 명소(바람의 언덕) 시뮬레이션 적용 테스트
-print("\n🧪 [실측 검증: 바람의 언덕 셔틀 + 청년공방/로컬카페 입점 시나리오]")
+# 5. 대표 거점(바람의 언덕) 정책 시나리오 적용 예시
+print("\n🧪 [대표 적용 예시: 바람의 언덕 셔틀 + 청년공방/로컬카페 입점 시나리오]")
 test_interval_drop = 95.0  # 120분 -> 25분 단축
 test_cei_gain = 0.18       # 0.65 -> 0.83 상승
 test_vac_drop = 0.08       # 공실률 8%p 해소
@@ -96,19 +100,21 @@ base_stay = 2392.8
 final_stay = base_stay + predicted_gain
 
 print(f"  - 현재 체류시간 : {base_stay:.1f}분 (약 {base_stay/60:.1f}시간)")
-print(f"  - 정책 효과 예측 : +{predicted_gain:.1f}분 증가 (+{predicted_gain/60:.1f}시간)")
+print(f"  - 정책효과 추정 : +{predicted_gain:.1f}분 증가 (+{predicted_gain/60:.1f}시간)")
 print(f"  - 정책 후 체류시간: {final_stay:.1f}분 (약 {final_stay/60:.1f}시간)")
 
 # 6. 백엔드 및 대시보드 연동용 JSON 가중치 저장
 weights_data = {
-    "model_name": "NumPy_Ridge_Tourism_Stay_Predictor",
+    "model_name": "NumPy_Ridge_Tourism_Stay_Scenario_Estimator",
     "r2_score": round(r2, 4),
     "rmse": round(rmse, 2),
     "coef_interval": round(coef_interval, 3),
     "coef_cei": round(coef_cei, 2),
     "coef_vacancy": round(coef_vacancy, 2),
     "intercept": round(intercept, 2),
-    "formula": f"ΔStay = {coef_interval:.2f}*ΔInterval + {coef_cei:.1f}*ΔCEI + {coef_vacancy:.1f}*ΔVacancy + {intercept:.2f}"
+    "formula": f"ΔStay = {coef_interval:.2f}*ΔInterval + {coef_cei:.1f}*ΔCEI + {coef_vacancy:.1f}*ΔVacancy + {intercept:.2f}",
+    "model_scope": "scenario_elasticity_based_policy_effect_estimator",
+    "model_note": "Generated from policy elasticity assumptions and synthetic scenario samples; use as a scenario estimator, not a field-validated prediction model."
 }
 
 with open(MODEL_OUTPUT_PATH, "w", encoding="utf-8") as f:
@@ -116,4 +122,6 @@ with open(MODEL_OUTPUT_PATH, "w", encoding="utf-8") as f:
 
 print(f"\n💾 회귀 계수 저장 완료: {MODEL_OUTPUT_PATH.name}")
 print("=" * 65)
+
+
 
