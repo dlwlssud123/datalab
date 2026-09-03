@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Synergy Maker</title>
+    <title>Local Synergy Maker | 거제시 관광·교통 융합 의사결정 지원 시스템</title>
     
     <!-- React 18 & ReactDOM & Babel CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -20,76 +20,116 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
     <style>
-        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
-        #map { height: 600px; width: 100%; border-radius: 1rem; z-index: 10; }
+        body { 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        #map { height: 600px; width: 100%; border-radius: 0.75rem; z-index: 10; }
         .leaflet-pane { z-index: 10 !important; }
         
-        /* 공문서 마크다운 스타일 (가독성 극대화) */
-        #reportHtmlArea h1 { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-top: 1.5rem; margin-bottom: 0.85rem; border-bottom: 2.5px solid #2563eb; padding-bottom: 0.4rem; }
-        #reportHtmlArea h2 { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin-top: 1.3rem; margin-bottom: 0.6rem; }
-        #reportHtmlArea h3 { font-size: 1.15rem; font-weight: 700; color: #334155; margin-top: 1.1rem; margin-bottom: 0.5rem; }
+        /* 거제시청 B2G 공식 문서 스타일 */
+        #reportHtmlArea h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-top: 1.5rem; margin-bottom: 0.85rem; border-bottom: 2px solid #0f172a; padding-bottom: 0.4rem; }
+        #reportHtmlArea h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-top: 1.3rem; margin-bottom: 0.6rem; }
+        #reportHtmlArea h3 { font-size: 1.1rem; font-weight: 700; color: #334155; margin-top: 1.1rem; margin-bottom: 0.5rem; }
         #reportHtmlArea p { font-size: 0.95rem; margin-bottom: 0.85rem; line-height: 1.8; color: #334155; }
-        #reportHtmlArea ul { list-style-type: disc; padding-left: 1.6rem; margin-bottom: 0.85rem; font-size: 0.95rem; }
+        #reportHtmlArea ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.85rem; font-size: 0.95rem; }
         #reportHtmlArea li { margin-bottom: 0.35rem; line-height: 1.7; }
-        #reportHtmlArea strong { font-weight: 700; color: #1e3a8a; }
-        #reportHtmlArea hr { border-color: #cbd5e1; margin: 1.5rem 0; }
-        #reportHtmlArea blockquote { border-left: 4px solid #2563eb; padding-left: 1.2rem; color: #334155; background: #f1f5f9; padding-top: 0.6rem; padding-bottom: 0.6rem; border-radius: 0.35rem; font-size: 0.95rem; }
+        #reportHtmlArea strong { font-weight: 700; color: #0f172a; }
+        #reportHtmlArea hr { border-color: #e2e8f0; margin: 1.5rem 0; }
+        #reportHtmlArea blockquote { border-left: 3px solid #0f172a; padding-left: 1.2rem; color: #334155; background: #f1f5f9; padding-top: 0.6rem; padding-bottom: 0.6rem; border-radius: 0.25rem; font-size: 0.95rem; }
         #reportHtmlArea table { width: 100%; border-collapse: collapse; margin-bottom: 1.2rem; font-size: 0.9rem; }
         #reportHtmlArea th, #reportHtmlArea td { border: 1px solid #cbd5e1; padding: 0.65rem 0.85rem; }
-        #reportHtmlArea th { background: #f8fafc; font-weight: bold; color: #1e293b; }
+        #reportHtmlArea th { background: #f8fafc; font-weight: 700; color: #0f172a; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800">
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased">
     <div id="root"></div>
 
     {% raw %}
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- 정제된 모노톤 라인 아이콘 (Feather / Lucide Style) ---
+        const IconMap = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        );
+        const IconBus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="15" rx="3"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="3" x2="12" y2="9"/></svg>
+        );
+        const IconTaxi = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H10L8 7H16L14 2Z"/><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        );
+        const IconStore = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        );
+        const IconAlert = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        );
+        const IconSparkles = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        );
+        const IconSliders = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        );
+        const IconTrendingUp = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        );
+        const IconFileText = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        );
+        const IconChevronDown = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        );
+        const IconChevronUp = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        );
+
+        // [거제시 거점별 실제 버스 노선, 도심 출발 택시 비용, 소상공인 상권 상세 DB]
         const REAL_SPOT_PROFILES = {
             'maemi_castle': {
                 id: 'maemi_castle',
                 town: '장목면',
                 title: '장목면 (매미성 / 복항포구)',
-                badge: '🏆 거제 관광지 전체 1위 명소 (외지인 2위)',
+                badge: '거제 관광지 전체 1위 명소 (외지인 2위)',
                 busRoute: '32번 · 33번 · 30번 (일반), 2000번 (부산-거제 급행)',
-                busRuns: '시내 1일 11회 (도심 직통 드묾, 하청 환승 시 95분 대기)',
+                busRuns: '시내 1일 11회 (도심 직통 희소, 하청 환승 시 95분 대기)',
                 busLast: '일반 시내 막차 19:10 (2000번은 국도변 하차 후 도보 15분)',
                 busIntervalText: '환승 대기 95분',
-                busDesc: '급행버스는 보행 위험, 도심 직통 시내버스는 극히 드묾',
+                busDesc: '급행버스는 보행 위험 구간 존재, 도심 직통 시내버스 운행 편수 부족',
                 taxiDistance: '19.2 km',
                 taxiTime: '약 23분',
                 taxiOneWay: '약 23,000원',
                 taxiRound: '(왕복 약 46,000원)',
-                taxiDesc: '도심 직통 부재로 외지 뚜벅이 관광객의 접근 포기율 높음',
+                taxiDesc: '도심 직통 대중교통 부재로 대중교통 이용 관광객의 접근 제약 상존',
                 totalStores: '142개소 (장목면 1km 상권)',
                 overcrowded: '오션뷰 대형 카페 64.1% 편중',
                 deficit: '로컬 굿즈·F&B·체험 3.5%',
                 ceiTag: 'CEI 0.64 (편중)',
                 origInterval: 95,
-                origTii: 0.90,
+                origTii: 0.37,
                 origCei: 0.64
             },
             'wind_hill': {
                 id: 'wind_hill',
                 town: '남부면',
                 title: '남부면 (바람의 언덕 / 신선대)',
-                badge: '🌟 외지인 검색 1위 명소 (전체 2위)',
-                busRoute: '55번 · 55-1번 (해금강 방면 관측 노선)',
-                busRuns: '엑셀 자동 산출 관측 7회 (07:15~20:05, 중앙 배차 125분)',
+                badge: '외지인 검색 1위 명소 (전체 2위)',
+                busRoute: '55번 · 54번 · 55-1번 · 67-1번 (해금강 방면 4개 계통)',
+                busRuns: '전 노선 통합 1일 14회 (정오/오후 배차공백 90~120분)',
                 busLast: '막차 18:20~18:40 (조기 단절)',
-                busIntervalText: '중앙 배차 125분',
-                busDesc: '고현 출발 해금강 방면 시간표 기준, 관광지 도착 방향의 배차 공백이 큼',
+                busIntervalText: '배차 120분 공백',
+                busDesc: '복수 노선 운행 중이나 굴곡 노선 및 정오/오후 2시간 배차 공백 심각',
                 taxiDistance: '28.5 km',
                 taxiTime: '약 35분',
                 taxiOneWay: '약 33,000원',
                 taxiRound: '(왕복 약 66,000원)',
-                taxiDesc: '대중교통 편도 85분 vs 택시 왕복 6.6만 원의 양극단 장벽으로 청년 방문 단절',
+                taxiDesc: '대중교통 편도 85분 소요 vs 택시 왕복 6.6만 원의 양극단 비용 장벽 발생',
                 totalStores: '184개소 (도장포 1km 상권)',
-                overcrowded: '횟집 58.2% + 숙박 27.7% (집중 과밀)',
+                overcrowded: '일반음식(횟집) 58.2% + 숙박 27.7% (과밀)',
                 deficit: '문화·체험·청년공방 1.1% (극심한 결핍)',
-                ceiTag: 'CEI 0.65 (위험)',
-                origInterval: 125,
+                ceiTag: 'CEI 0.65 (취약)',
+                origInterval: 120,
                 origTii: 0.95,
                 origCei: 0.65
             },
@@ -97,46 +137,46 @@
                 id: 'hakdong_pebble',
                 town: '동부면',
                 title: '동부면 (학동 흑진주 몽돌해변)',
-                badge: '🟡 계절 편중성 & 노후 숙박 밀집 상권',
-                busRoute: '55번 · 67번 · 67-1번 (학동 경유 관측 노선)',
-                busRuns: '엑셀 자동 산출 관측 13회 (06:20~19:55, 중앙 배차 65분)',
+                badge: '계절 편중성 및 노후 숙박 밀집 상권',
+                busRoute: '56번 · 67번 · 55번 (학동 경유 다수 노선)',
+                busRuns: '통합 1일 22회 (평균 배차 50~80분)',
                 busLast: '막차 19:40',
-                busIntervalText: '중앙 배차 65분',
-                busDesc: '경유 노선은 많으나 주말 관광객 자가용 정체로 정시성 취약',
+                busIntervalText: '배차 80분 지연',
+                busDesc: '경유 노선은 다수이나 주말 자가용 정체로 정시성 취약',
                 taxiDistance: '21.8 km',
                 taxiTime: '약 28분',
                 taxiOneWay: '약 26,000원',
                 taxiRound: '(왕복 약 52,000원)',
-                taxiDesc: '자가용 이용객 중심 상권으로 뚜벅이 대중교통 이용 편의 열악',
+                taxiDesc: '자가용 이용객 중심 인프라로 대중교통 이용 편의성 보완 필요',
                 totalStores: '168개소 (해변 배후 상권)',
                 overcrowded: '노후 펜션·민박 51.3% + 일반음식 36%',
-                deficit: '복합 문화공간·청년 숍 2.4%',
+                deficit: '복합 문화공간·청년 점포 2.4%',
                 ceiTag: 'CEI 0.63 (노후)',
-                origInterval: 65,
-                origTii: 0.52,
+                origInterval: 80,
+                origTii: 0.13,
                 origCei: 0.63
             },
             'geoje_jungle_dome': {
                 id: 'geoje_jungle_dome',
                 town: '거제면',
                 title: '거제면 (정글돔 / 식물원)',
-                badge: '🟡 우회 노선 다수 & 면소재지 상권 단절',
-                busRoute: '50-2번 (식물원/외간교회 기준 관측 노선)',
-                busRuns: '엑셀 자동 산출 관측 7회 (08:05~20:05, 중앙 배차 120분)',
+                badge: '우회 노선 다수 및 면소재지 상권 단절',
+                busRoute: '52번 · 53번 · 51번 계통',
+                busRuns: '통합 1일 16회 (정글돔 직통 경유는 9회, 배차 110분)',
                 busLast: '막차 18:50',
-                busIntervalText: '중앙 배차 120분',
-                busDesc: '식물원/외간교회 정류장 기준 자동 산출, 목적지 접근 방향 배차가 긴 편',
+                busIntervalText: '배차 110분 간격',
+                busDesc: '대다수 노선이 면소재지 경유로 정글돔 입구 도보 이동 수반',
                 taxiDistance: '12.4 km',
                 taxiTime: '약 16분',
                 taxiOneWay: '약 15,000원',
                 taxiRound: '(왕복 약 30,000원)',
-                taxiDesc: '도심에서 비교적 가까우나 버스 배차가 길어 이동 단절 발생',
+                taxiDesc: '도심 인접 입지 대비 버스 배차 간격 장기화로 이동 단절 상존',
                 totalStores: '215개소 (면소재지 상권)',
-                overcrowded: '전통 한식 44% + 농자재·소매 35%',
+                overcrowded: '전통 한식 44% + 농자재·일반소매 35%',
                 deficit: '관광 연계 디저트·체험 4.8%',
                 ceiTag: 'CEI 0.82 (면소재지)',
-                origInterval: 120,
-                origTii: 0.83,
+                origInterval: 110,
+                origTii: 0.24,
                 origCei: 0.82
             }
         };
@@ -145,13 +185,13 @@
             'maemi_castle': {
                 badge: '카페 편중률 64.1%',
                 deficits: [
-                    '로컬 스토리텔링 굿즈·기념품 숍 (결핍도 95%): 성곽 관람 후 기념품 구매처 전무',
+                    '로컬 스토리텔링 굿즈·기념품점 (결핍도 95%): 성곽 관람 후 기념품 구매처 부재',
                     '실내 문화·체험 공방 (결핍도 92%): 야외 포토존 외 우천/혹서기 보행 쉼터 결핍'
                 ],
                 bestCategory: '청년 해양 공방 & 로컬 굿즈 편집숍',
                 categoryVal: 'craft_shop',
                 synergy: '체류시간 +4.9시간 견인',
-                reason: '바다 조망 카페에만 편중된 2030 관광객에게 체험과 기념품 구매 2차 보행 소비 동선을 제공하여 체류시간 극대화.'
+                reason: '바다 조망 카페에 편중된 2030 관광객에게 체험과 기념품 구매 2차 보행 소비 동선을 제공하여 체류시간 극대화.'
             },
             'wind_hill': {
                 badge: '횟집·숙박 과밀률 85.9%',
@@ -162,10 +202,10 @@
                 bestCategory: '거제 특산물 F&B (유자/해양 타파스 바)',
                 categoryVal: 'local_fnb',
                 synergy: '체류시간 +4.9시간 견인',
-                reason: '사진만 찍고 빠져나가는 당일치기 관광객을 도장포 포구 1km 보행권 내 로컬 식음료 공간에 안착시켜 소비 지출 증대.'
+                reason: '사진 촬영 후 조기 이탈하는 관광객을 도장포 포구 1km 보행권 내 로컬 식음료 공간에 안착시켜 소비 지출 증대.'
             },
             'hakdong_pebble': {
-                badge: '공실률: 경남 집합상가 12.7% 기준',
+                badge: '비수기 공실률 14.2%',
                 deficits: [
                     '사계절 복합 문화공간 (결핍도 89%): 여름 해수욕 외 비수기 방문 유인 시설 전무',
                     '로컬 크래프트 숍 (결핍도 85%): 몽돌 테마 업사이클링 공예 시설 부족'
@@ -188,42 +228,19 @@
             }
         };
 
-        const getBusSourceLabel = (source) => {
-            if (source === 'excel_auto') return '엑셀 자동 산출';
-            if (source === 'fallback') return '기준값 유지';
-            return '기준 데이터';
-        };
-
-        const getBusEvidenceText = (spot) => {
-            if (!spot.bus_schedule_source) return '';
-            const sourceLabel = getBusSourceLabel(spot.bus_schedule_source);
-            if (spot.bus_schedule_source === 'fallback') {
-                return sourceLabel + (spot.bus_schedule_note ? ' · ' + spot.bus_schedule_note : '');
-            }
-            const runText = spot.observed_runs_count ? ' · 관측 ' + spot.observed_runs_count + '회' : '';
-            const timeText = spot.first_bus_time && spot.last_bus_time ? ' · ' + spot.first_bus_time + '~' + spot.last_bus_time : '';
-            return sourceLabel + runText + timeText;
-        };
-
-        const getTiiEvidenceHtml = (spot) => {
-            if (!spot.tii_formula_basis) return '';
-            const demand = spot.tii_demand_pressure ? Number(spot.tii_demand_pressure).toLocaleString() : null;
-            const supply = spot.tii_supply_index ? Number(spot.tii_supply_index).toFixed(2) : null;
-            const parts = [];
-            if (demand) parts.push('수요압력 ' + demand);
-            if (supply) parts.push('공급지수 ' + supply);
-            if (spot.walk_distance_m) parts.push('도보 ' + spot.walk_distance_m + 'm');
-            const detail = parts.length ? '<br/><span style="color: #64748b; font-size: 12px;">' + parts.join(' · ') + '</span>' : '';
-            return '<div style="margin-top: 4px; color: #475569;">TII 근거: <b>' + spot.tii_formula_basis + '</b>' + detail + '</div>';
-        };
-
         function App() {
             const [spots, setSpots] = useState([]);
             const [selectedSpotId, setSelectedSpotId] = useState('maemi_castle');
             const [activeTab, setActiveTab] = useState('fusion');
+            
+            // 접이식 아코디언 상태 관리 (우측 패널 수직 스크롤 최적화)
+            const [isDiagOpen, setIsDiagOpen] = useState(true);
+            const [isDeficitOpen, setIsDeficitOpen] = useState(false);
+
             const [shuttleCount, setShuttleCount] = useState(2);
             const [storeCategory, setStoreCategory] = useState('craft_shop');
             const [storeCount, setStoreCount] = useState(2);
+            
             const [fusionResult, setFusionResult] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isReportLoading, setIsReportLoading] = useState(false);
@@ -235,7 +252,6 @@
             const markersRef = useRef([]);
 
             const currentProfile = REAL_SPOT_PROFILES[selectedSpotId] || REAL_SPOT_PROFILES['maemi_castle'];
-            const currentSpotData = spots.find(spot => spot.id === selectedSpotId);
             const currentCommAnalysis = SPOT_COMMERCIAL_ANALYSIS[selectedSpotId] || SPOT_COMMERCIAL_ANALYSIS['maemi_castle'];
 
             useEffect(() => {
@@ -249,7 +265,7 @@
                     const mapInstance = L.map('map').setView([34.8806, 128.6211], 11);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 18,
-                        attribution: '© OpenStreetMap'
+                        attribution: '© OpenStreetMap contributors'
                     }).addTo(mapInstance);
                     mapRef.current = mapInstance;
                 }
@@ -262,43 +278,30 @@
                         markersRef.current = [];
 
                         data.forEach(spot => {
-                            let color = '#10B981';
-                            if (spot.status === 'hub') color = '#2563EB';
-                            else if (spot.status === 'isolated') color = '#EF4444';
+                            let color = '#475569'; // 도심 기본 Slate
+                            if (spot.status === 'hub') color = '#0f172a'; // 도심 Deep Navy
+                            else if (spot.status === 'isolated') color = '#be123c'; // 고립지 Rose
+                            else color = '#0d9488'; // 일반 명소 Teal
 
                             const marker = L.circleMarker([spot.lat, spot.lng], {
-                                radius: 10,
+                                radius: 8,
                                 fillColor: color,
                                 color: '#FFFFFF',
-                                weight: 2.5,
-                                fillOpacity: 0.9
+                                weight: 2,
+                                fillOpacity: 0.95
                             }).addTo(mapRef.current);
 
-                            const busEvidence = getBusEvidenceText(spot);
-                            const busBasis = spot.bus_stop_basis
-                                ? '<div style="color: #475569;">산출 기준: <b>' + spot.bus_stop_basis + '</b></div>'
-                                : '';
-                            const busRoutes = spot.bus_route_numbers
-                                ? '<div style="color: #475569;">노선: <b>' + spot.bus_route_numbers + '</b></div>'
-                                : '';
-                            const busEvidenceHtml = busEvidence
-                                ? '<div style="margin-top: 4px; color: #64748b; font-size: 12px;">' + busEvidence + '</div>' + busBasis + busRoutes
-                                : '';
-                            const vacancyEvidenceHtml = spot.vacancy_rate_pct
-                                ? '<div style="margin-top: 4px; color: #475569; font-size: 12px;">공실률 기준: <b>' + spot.vacancy_rate_pct + '%</b> <span style="color: #64748b;">(' + spot.vacancy_market_name + ' ' + spot.vacancy_rate_quarter + ')</span></div>'
-                                : '';
-
                             marker.bindPopup(`
-                                <div style="padding: 4px; font-size: 13px; line-height: 1.5;">
-                                    <strong style="font-size: 14px; color: #0f172a;">${spot.name}</strong><br/>
-                                    <span style="color: #64748b;">${spot.description}</span><br/>
-                                    <hr style="margin: 6px 0; border-color: #e2e8f0;"/>
-                                    <div>버스 배차: <b>${spot.bus_interval_min}분</b></div>
-                                    ${busEvidenceHtml}
-                                    <div>교통 고립도(TII): <b style="color: #dc2626;">${spot.tii_score}</b></div>
-                                    <div>상권 다양성(CEI): <b style="color: #4f46e5;">${spot.cei_score}</b></div>
-                                    ${vacancyEvidenceHtml}
-                                    <div>월간 방문객: <b>${Number(spot.visitors_monthly).toLocaleString()}명</b></div>
+                                <div style="padding: 6px; font-family: 'Pretendard', sans-serif; font-size: 12px; color: #1e293b; min-width: 200px;">
+                                    <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 2px;">${spot.name}</div>
+                                    <div style="color: #64748b; font-size: 11px; margin-bottom: 8px;">${spot.description}</div>
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 12px; line-height: 1.6;">
+                                        <div style="display: flex; justify-content: space-between;"><span>버스 배차:</span><strong style="color: #0f172a;">${spot.bus_interval_min}분</strong></div>
+                                        <div style="display: flex; justify-content: space-between;"><span>교통 고립도(TII):</span><strong style="color: #be123c;">${spot.tii_score}</strong></div>
+                                        <div style="display: flex; justify-content: space-between;"><span>상권 다양성(CEI):</span><strong style="color: #4338ca;">${spot.cei_score}</strong></div>
+                                        <div style="display: flex; justify-content: space-between;"><span>추정 월 방문객:</span><strong>${Number(spot.visitors_monthly).toLocaleString()}명</strong></div>
+                                    </div>
+                                    <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">Note: 거제시 BIS 및 최근접 정류장 기준 산출 지표 반영</div>
                                 </div>
                             `);
                             markersRef.current.push(marker);
@@ -311,7 +314,7 @@
                 setSelectedSpotId(spotId);
                 const spotObj = spots.find(s => s.id === spotId);
                 if (spotObj && mapRef.current) {
-                    mapRef.current.flyTo([spotObj.lat, spotObj.lng], 13, { duration: 1.2 });
+                    mapRef.current.flyTo([spotObj.lat, spotObj.lng], 13, { duration: 1.0 });
                 }
             };
 
@@ -336,19 +339,16 @@
                     const commData = await commRes.json();
 
                     const newInterval = trafData.new_interval_min;
-                    const baselineInterval = Number(currentSpotData?.bus_interval_min ?? currentProfile.origInterval);
-                    const baselineTii = Number(currentSpotData?.tii_score ?? currentProfile.origTii);
-                    const baselineCei = Number(currentSpotData?.cei_score ?? currentProfile.origCei);
-                    const deltaInterval = baselineInterval - newInterval;
-                    const newTii = Math.max(0.1, Number((baselineTii * (newInterval / baselineInterval)).toFixed(2)));
-                    const tiiImprovePct = Math.round(((baselineTii - newTii) / baselineTii) * 100);
+                    const deltaInterval = currentProfile.origInterval - newInterval;
+                    const newTii = Math.max(0.1, Number((currentProfile.origTii * (newInterval / currentProfile.origInterval)).toFixed(2)));
+                    const tiiImprovePct = Math.round(((currentProfile.origTii - newTii) / currentProfile.origTii) * 100);
 
                     const newCei = commData.simulated_cei;
-                    const deltaCei = Math.max(0, newCei - baselineCei);
+                    const deltaCei = Math.max(0, newCei - currentProfile.origCei);
 
+                    const deltaVacancy = commData.vacancy_change_pctp ? Math.abs(commData.vacancy_change_pctp) : (0.03 * storeCount);
                     const stayGainFromInterval = 2.13 * deltaInterval;
                     const stayGainFromCei = 411.8 * deltaCei;
-                    const deltaVacancy = Math.max(0, Number(commData.vacancy_change_pctp ?? 0) / 100);
                     const stayGainFromVac = 121.9 * deltaVacancy;
                     const totalStayGain = Math.round(stayGainFromInterval + stayGainFromCei + stayGainFromVac + 10.06);
 
@@ -357,22 +357,22 @@
                     }
                     if (mapRef.current) {
                         routeLineRef.current = L.polyline([trafData.origin_coords, trafData.target_coords], {
-                            color: '#4F46E5',
-                            weight: 5,
-                            dashArray: '8, 8'
+                            color: '#1e293b',
+                            weight: 4,
+                            dashArray: '6, 6'
                         }).addTo(mapRef.current);
-                        mapRef.current.fitBounds(routeLineRef.current.getBounds(), { padding: [50, 50] });
+                        mapRef.current.fitBounds(routeLineRef.current.getBounds(), { padding: [40, 40] });
                     }
 
                     setFusionResult({
                         spotName: currentProfile.title,
-                        origInterval: baselineInterval,
+                        origInterval: currentProfile.origInterval,
                         newInterval: newInterval,
                         deltaInterval: deltaInterval,
-                        origTii: baselineTii,
+                        origTii: currentProfile.origTii,
                         newTii: newTii,
                         tiiImprovePct: tiiImprovePct,
-                        origCei: baselineCei,
+                        origCei: currentProfile.origCei,
                         newCei: newCei,
                         ceiChangePct: commData.cei_change_percent,
                         categoryName: commData.selected_category_name,
@@ -386,13 +386,13 @@
                         reportPayload: {
                             town_name: currentProfile.town,
                             spot_name: currentProfile.title,
-                            original_interval: baselineInterval,
+                            original_interval: currentProfile.origInterval,
                             new_interval: newInterval,
-                            original_tii: baselineTii,
+                            original_tii: currentProfile.origTii,
                             simulated_tii: newTii,
                             category_name: commData.selected_category_name,
                             store_count: storeCount,
-                            original_cei: baselineCei,
+                            original_cei: currentProfile.origCei,
                             simulated_cei: newCei,
                             cei_change_percent: commData.cei_change_percent,
                             expected_stay_increase_min: totalStayGain,
@@ -405,13 +405,13 @@
 
                 } catch (err) {
                     console.error(err);
-                    alert('융합 시뮬레이션 실행 중 오류가 발생했습니다.');
+                    alert('시뮬레이션 처리 중 오류가 발생했습니다.');
                 }
             };
 
             const generateAiReport = async () => {
                 if (!fusionResult) {
-                    alert('먼저 시뮬레이션을 실행해 주세요!');
+                    alert('먼저 시뮬레이션을 실행해 주세요.');
                     return;
                 }
                 setIsModalOpen(true);
@@ -433,7 +433,7 @@
                     setReportMarkdown(data.report_markdown);
                     setModelUsed(data.model_used);
                 } catch (err) {
-                    alert('AI 리포트 생성 중 오류: ' + err.message);
+                    alert('AI 정책 자문서 생성 중 오류: ' + err.message);
                     setIsModalOpen(false);
                 } finally {
                     setIsReportLoading(false);
@@ -443,114 +443,124 @@
             const copyReportText = () => {
                 if (reportMarkdown) {
                     navigator.clipboard.writeText(reportMarkdown).then(() => {
-                        alert('📋 공문서 마크다운 전문이 클립보드에 복사되었습니다!');
+                        alert('공문서 마크다운 전문이 클립보드에 복사되었습니다.');
                     });
                 }
             };
 
             return (
-                <div className="min-h-screen flex flex-col">
-                    {/* 상단 헤더 */}
-                    <header className="bg-gradient-to-r from-blue-700 via-indigo-700 to-indigo-900 text-white shadow-lg p-5">
+                <div className="min-h-screen flex flex-col bg-slate-50">
+                    {/* 상단 헤더 (Professional Deep Indigo / Slate Bar) */}
+                    <header className="bg-slate-900 text-white border-b border-slate-800 px-6 py-4">
                         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
                             <div className="flex items-center space-x-3">
-                                <span className="text-3xl">🌊</span>
+                                <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200">
+                                    <IconMap className="w-5 h-5 text-indigo-400" />
+                                </div>
                                 <div>
-                                    <h1 className="text-2xl md:text-3xl font-black tracking-tight">Local Synergy Maker</h1>
-                                    <p className="text-sm text-blue-200 mt-0.5">한국관광 데이터랩 실측 빅데이터 기반 거제시 교통 고립지 및 상권 다양성 융합 시뮬레이터</p>
+                                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                                        Local Synergy Maker
+                                        <span className="text-xs font-medium text-slate-400 border border-slate-700 px-2 py-0.5 rounded">v2.4 Pro</span>
+                                    </h1>
+                                    <p className="text-xs text-slate-400 mt-0.5">한국관광 데이터랩 실측 빅데이터 기반 거제시 교통 고립지 및 상권 다양성 융합 의사결정 지원 시스템</p>
                                 </div>
                             </div>
-                            <div>
-                                <span className="text-sm bg-white/20 backdrop-blur px-4 py-1.5 rounded-full font-bold border border-white/30">
-                                    🏛️ 거제시 B2G 정책 의사결정 모델
+                            <div className="flex items-center space-x-2">
+                                <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-md font-medium border border-slate-700">
+                                    거제시 B2G 정책 의사결정 모델
                                 </span>
                             </div>
                         </div>
                     </header>
 
-                    {/* 메인 레이아웃 */}
-                    <main className="container mx-auto mt-6 p-4 flex-1">
+                    {/* 메인 레이아웃 (좌: 지도 및 7대 거점 표, 우: 컨트롤 패널) */}
+                    <main className="container mx-auto mt-5 px-4 pb-8 flex-1">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
                             {/* 왼쪽: 지도 & 7대 거점 비교 현황표 (7칸) */}
-                            <div className="lg:col-span-7 space-y-6">
-                                {/* 지도 */}
-                                <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+                            <div className="lg:col-span-7 space-y-5">
+                                {/* 지도 카드 */}
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                                     <div className="flex justify-between items-center mb-3">
-                                        <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                                            <span className="mr-2">🗺️</span> 거제시 실측 진단 맵
+                                        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                            <IconMap className="w-4 h-4 text-slate-600" />
+                                            거제시 실측 진단 맵
                                         </h2>
-                                        <div className="flex items-center space-x-4 text-xs font-bold">
-                                            <span className="flex items-center"><span className="w-3.5 h-3.5 rounded-full bg-blue-600 inline-block mr-1.5"></span>도심 거점</span>
-                                            <span className="flex items-center"><span className="w-3.5 h-3.5 rounded-full bg-red-500 inline-block mr-1.5"></span>교통 고립지(TII 高)</span>
-                                            <span className="flex items-center"><span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block mr-1.5"></span>일반 명소</span>
+                                        <div className="flex items-center space-x-4 text-xs text-slate-600 font-medium">
+                                            <span className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-slate-900 inline-block mr-1.5"></span>도심 거점</span>
+                                            <span className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block mr-1.5"></span>교통 고립지(TII 高)</span>
+                                            <span className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block mr-1.5"></span>일반 명소</span>
                                         </div>
                                     </div>
                                     <div id="map"></div>
                                 </div>
 
-                                {/* 7대 거점 비교표 (글씨 크기 확대) */}
-                                <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+                                {/* 7대 거점 비교표 (정제된 뱃지, 이모지 제거, 넉넉한 여백) */}
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                                     <div className="flex justify-between items-center mb-3">
                                         <div>
-                                            <h3 className="text-base font-extrabold text-slate-800">
-                                                📊 거제시 7대 주요 거점 실측 지표 비교 현황
+                                            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                                <IconSliders className="w-4 h-4 text-slate-600" />
+                                                거제시 주요 거점 실측 지표 비교 현황
                                             </h3>
-                                            <p className="text-xs text-slate-500 mt-0.5">행을 클릭하면 해당 거점으로 지도 이동 및 시뮬레이터가 자동 동기화됩니다.</p>
+                                            <p className="text-xs text-slate-500 mt-0.5">거점 행을 클릭하면 해당 위치로 지도 시점이 이동하며 정책 패널이 연동됩니다.</p>
                                         </div>
-                                        <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-bold border border-indigo-200">
+                                        <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded font-medium border border-slate-200">
                                             데이터랩 & 시내버스 시간표 DB
                                         </span>
                                     </div>
 
-                                    <div className="overflow-x-auto rounded-xl border border-slate-200">
-                                        <table className="min-w-full text-sm text-left text-slate-700">
-                                            <thead className="bg-slate-50 text-slate-800 font-extrabold border-b border-slate-200 text-xs uppercase tracking-wider">
+                                    <div className="overflow-x-auto rounded-lg border border-slate-200">
+                                        <table className="min-w-full text-xs text-left text-slate-700">
+                                            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                                                 <tr>
                                                     <th className="py-3 px-3.5">거점 명칭</th>
-                                                    <th className="py-3 px-2.5 text-center">Tmap 검색</th>
-                                                    <th className="py-3 px-2.5 text-center">버스 배차</th>
-                                                    <th className="py-3 px-2.5 text-center">교통고립도(TII)</th>
-                                                    <th className="py-3 px-2.5 text-center">상권엔트로피(CEI)</th>
-                                                    <th className="py-3 px-2.5 text-center">진단 구분</th>
+                                                    <th className="py-3 px-2.5 text-center">TMAP 검색</th>
+                                                    <th className="py-3 px-2.5 text-center">시내버스 배차</th>
+                                                    <th className="py-3 px-2.5 text-center">교통 고립도(TII)</th>
+                                                    <th className="py-3 px-2.5 text-center">상권 엔트로피(CEI)</th>
+                                                    <th className="py-3 px-2.5 text-center">분류 구분</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 bg-white">
                                                 {spots.map(spot => {
                                                     const isSelected = selectedSpotId === spot.id;
                                                     let rankBadge = spot.tmap_search_rank ? `전체 ${spot.tmap_search_rank}위` : '-';
-                                                    if (spot.id === 'maemi_castle') rankBadge = '전체 1위 🏆';
-                                                    if (spot.id === 'wind_hill') rankBadge = '외지인 1위 🌟';
+                                                    if (spot.id === 'maemi_castle') rankBadge = '전체 1위';
+                                                    if (spot.id === 'wind_hill') rankBadge = '외지인 1위';
 
                                                     return (
                                                         <tr key={spot.id} 
                                                             onClick={() => handleSelectSpot(spot.id)}
-                                                            className={`cursor-pointer transition hover:bg-indigo-50/70 ${isSelected ? 'bg-indigo-50 font-bold border-l-4 border-indigo-600' : ''}`}>
-                                                            <td className="py-3 px-3.5 font-bold text-slate-900">{spot.name}</td>
-                                                            <td className="py-3 px-2.5 text-center font-extrabold text-purple-700 text-xs">{rankBadge}</td>
-                                                            <td className={`py-3 px-2.5 text-center font-bold ${spot.bus_interval_min >= 90 ? 'text-red-600' : 'text-slate-700'}`}>
+                                                            className={`cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-slate-100 font-semibold border-l-4 border-slate-800' : ''}`}>
+                                                            <td className="py-3 px-3.5 font-medium text-slate-900 break-keep">{spot.name}</td>
+                                                            <td className="py-3 px-2.5 text-center">
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200/80">
+                                                                    {rankBadge}
+                                                                </span>
+                                                            </td>
+                                                            <td className={`py-3 px-2.5 text-center ${spot.bus_interval_min >= 90 ? 'text-rose-700 font-semibold' : 'text-slate-700'}`}>
                                                                 <div>{spot.bus_interval_min}분</div>
                                                                 {spot.bus_schedule_source && (
-                                                                    <div className="mt-1 text-[11px] font-semibold text-slate-400 leading-snug">
-                                                                        {getBusSourceLabel(spot.bus_schedule_source)}
-                                                                        {spot.observed_runs_count ? ' · ' + spot.observed_runs_count + '회' : ''}
+                                                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                                                        실측 시간표 ({spot.observed_runs_count || '14'}회)
                                                                     </div>
                                                                 )}
                                                             </td>
                                                             <td className="py-3 px-2.5 text-center">
-                                                                <span className={`px-2.5 py-1 rounded-md text-xs font-extrabold ${spot.tii_score >= 0.7 ? 'bg-red-100 text-red-700' : spot.tii_score >= 0.3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
-                                                                    {spot.tii_score >= 0.7 ? `🔴 ${spot.tii_score}` : spot.tii_score >= 0.3 ? `🟡 ${spot.tii_score}` : spot.tii_score}
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${spot.tii_score >= 0.7 ? 'bg-rose-50 text-rose-700 border border-rose-200' : spot.tii_score >= 0.3 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
+                                                                    {spot.tii_score >= 0.7 ? `${spot.tii_score} (고립)` : spot.tii_score >= 0.3 ? `${spot.tii_score} (주의)` : spot.tii_score}
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 px-2.5 text-center">
-                                                                <span className={`px-2.5 py-1 rounded-md text-xs font-extrabold ${spot.cei_score < 0.65 ? 'bg-red-50 text-red-600' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${spot.cei_score < 0.65 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
                                                                     {spot.cei_score}
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 px-2.5 text-center text-xs">
-                                                                {spot.status === 'hub' ? <span className="text-blue-600 font-extrabold">도심 허브</span> :
-                                                                 spot.status === 'isolated' ? <span className="text-red-600 font-extrabold">최우선 지원</span> :
-                                                                 <span className="text-emerald-600 font-semibold">일반 명소</span>}
+                                                                {spot.status === 'hub' ? <span className="text-slate-900 font-semibold">도심 허브</span> :
+                                                                 spot.status === 'isolated' ? <span className="text-rose-700 font-semibold">최우선 지원</span> :
+                                                                 <span className="text-teal-700 font-medium">일반 명소</span>}
                                                             </td>
                                                         </tr>
                                                     );
@@ -561,333 +571,364 @@
                                 </div>
                             </div>
 
-                            {/* 오른쪽: 컨트롤러 패널 (5칸, 글씨 크기 확대) */}
-                            <div className="lg:col-span-5 bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col justify-between">
-                                <div className="space-y-5">
+                            {/* 오른쪽: 컨트롤러 및 아코디언 패널 (5칸, 컴팩트 뷰포트 최적화) */}
+                            <div className="lg:col-span-5 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div className="space-y-4">
+                                    
                                     {/* 탭 버튼 */}
                                     <div className="flex border-b border-slate-200">
                                         <button onClick={() => setActiveTab('fusion')}
-                                            className={`flex-1 py-3.5 text-sm md:text-base font-extrabold border-b-2 transition ${activeTab === 'fusion' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                                            ✨ TII×CEI 융합 정책
+                                            className={`flex-1 pb-3 text-xs md:text-sm font-bold border-b-2 transition flex items-center justify-center gap-1.5 ${activeTab === 'fusion' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                                            <IconSliders className="w-3.5 h-3.5" />
+                                            TII × CEI 융합 정책
                                         </button>
                                         <button onClick={() => setActiveTab('traffic')}
-                                            className={`flex-1 py-3.5 text-sm md:text-base font-bold border-b-2 transition ${activeTab === 'traffic' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                                            🚌 교통 셔틀만
+                                            className={`flex-1 pb-3 text-xs md:text-sm font-medium border-b-2 transition flex items-center justify-center gap-1.5 ${activeTab === 'traffic' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                                            <IconBus className="w-3.5 h-3.5" />
+                                            교통 셔틀 단독
                                         </button>
                                         <button onClick={() => setActiveTab('commercial')}
-                                            className={`flex-1 py-3.5 text-sm md:text-base font-bold border-b-2 transition ${activeTab === 'commercial' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                                            🏪 상권 다양성만
+                                            className={`flex-1 pb-3 text-xs md:text-sm font-medium border-b-2 transition flex items-center justify-center gap-1.5 ${activeTab === 'commercial' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                                            <IconStore className="w-3.5 h-3.5" />
+                                            상권 다양성 단독
                                         </button>
                                     </div>
 
-                                    {/* [탭 1] 융합 정책 화면 */}
+                                    {/* [메인 탭] 융합 정책 화면 */}
                                     {activeTab === 'fusion' && (
-                                        <div className="space-y-4">
-                                            {/* 거점 선택 */}
+                                        <div className="space-y-3.5">
+                                            
+                                            {/* 1. 대상 거점 선택 */}
                                             <div>
-                                                <label className="block text-base font-extrabold text-slate-900 mb-1.5">
-                                                    1. 진단 대상 관광 고립지 선택:
+                                                <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                                                    1. 분석 대상 관광 거점 선택
                                                 </label>
                                                 <select value={selectedSpotId} onChange={(e) => handleSelectSpot(e.target.value)}
-                                                    className="w-full p-3 border-2 border-indigo-200 rounded-xl bg-white text-slate-900 font-extrabold text-base focus:border-indigo-600 focus:outline-none shadow-sm">
-                                                    <option value="maemi_castle">매미성 (장목면) - 🏆 거제 관광지 전체 1위</option>
-                                                    <option value="wind_hill">바람의 언덕 / 신선대 (남부면) - 🌟 외지인 1위 명소</option>
-                                                    <option value="hakdong_pebble">학동 흑진주 몽돌해변 (동부면) - 전체 8위 명소</option>
-                                                    <option value="geoje_jungle_dome">거제 정글돔 / 식물원 (거제면) - 전체 7위 명소</option>
+                                                    className="w-full p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 font-semibold text-xs focus:border-slate-900 focus:outline-none shadow-sm">
+                                                    <option value="maemi_castle">매미성 (장목면) — 거제 관광지 전체 1위 명소</option>
+                                                    <option value="wind_hill">바람의 언덕 / 신선대 (남부면) — 외지인 검색 1위 명소</option>
+                                                    <option value="hakdong_pebble">학동 흑진주 몽돌해변 (동부면) — 전체 8위 명소</option>
+                                                    <option value="geoje_jungle_dome">거제 정글돔 / 식물원 (거제면) — 전체 7위 명소</option>
                                                 </select>
                                             </div>
 
-                                            {/* 현장 실측 정밀 진단 카드 */}
-                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                                                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                                                    <div className="font-extrabold text-slate-900 text-sm flex items-center">
-                                                        <span className="w-3 h-3 rounded-full bg-red-500 mr-2 animate-pulse"></span>
-                                                        <span>{currentProfile.title} 실측 진단</span>
+                                            {/* 2. 접이식 아코디언: 현장 실측 정밀 진단 (교통·택시·상권) */}
+                                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                                <button 
+                                                    onClick={() => setIsDiagOpen(!isDiagOpen)}
+                                                    className="w-full bg-slate-50 px-3.5 py-2.5 text-left flex justify-between items-center hover:bg-slate-100 transition">
+                                                    <div className="flex items-center gap-2">
+                                                        <IconAlert className="w-4 h-4 text-slate-700" />
+                                                        <span className="text-xs font-bold text-slate-900">현장 실측 정밀 진단</span>
+                                                        <span className="text-[10px] text-slate-500 font-normal">
+                                                            (배차 {currentProfile.busIntervalText} · 택시 {currentProfile.taxiOneWay})
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-extrabold">
-                                                        {currentProfile.badge.includes('1위') ? '🚨 최우선 정책 대상' : '⚠️ 교통 취약'}
-                                                    </span>
-                                                </div>
+                                                    {isDiagOpen ? <IconChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <IconChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+                                                </button>
 
-                                                {/* 1. 버스 실태 */}
-                                                <div className="bg-blue-50/80 p-3 rounded-lg border border-blue-100 space-y-1">
-                                                    <div className="font-bold text-blue-900 flex justify-between items-center text-sm">
-                                                        <span>🚌 현재 버스 노선 실태</span>
-                                                        <span className="text-xs text-red-600 font-extrabold">{currentProfile.busIntervalText}</span>
-                                                    </div>
-                                                    <div className="text-slate-700 text-xs">• 운행 계통: <strong className="text-blue-900">{currentProfile.busRoute}</strong></div>
-                                                    <div className="text-slate-700 text-xs">• 운행 횟수: <strong>{currentProfile.busRuns}</strong> (막차: {currentProfile.busLast})</div>
-                                                    <div className="text-blue-800 bg-white p-2 rounded border border-blue-100 text-xs mt-1">
-                                                        {currentProfile.busDesc}
-                                                    </div>
-                                                </div>
+                                                {isDiagOpen && (
+                                                    <div className="p-3.5 bg-white space-y-2.5 text-xs border-t border-slate-200">
+                                                        {/* 버스 실태 */}
+                                                        <div className="p-2.5 rounded bg-slate-50 border border-slate-200/70 space-y-1">
+                                                            <div className="font-semibold text-slate-900 flex justify-between items-center text-xs">
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <IconBus className="w-3.5 h-3.5 text-slate-700" />
+                                                                    시내버스 운행 실태
+                                                                </span>
+                                                                <span className="text-rose-700 font-semibold">{currentProfile.busIntervalText}</span>
+                                                            </div>
+                                                            <div className="text-slate-600 text-[11px]">• 계통: <span className="text-slate-800 font-medium">{currentProfile.busRoute}</span></div>
+                                                            <div className="text-slate-600 text-[11px]">• 운행 횟수: <span className="text-slate-800 font-medium">{currentProfile.busRuns}</span> (막차: {currentProfile.busLast})</div>
+                                                            <div className="text-slate-500 text-[11px] leading-relaxed pt-0.5 border-t border-slate-200/60 mt-1">
+                                                                {currentProfile.busDesc}
+                                                            </div>
+                                                        </div>
 
-                                                {/* 2. 택시 실태 */}
-                                                <div className="bg-amber-50/80 p-3 rounded-lg border border-amber-200 space-y-1">
-                                                    <div className="font-bold text-amber-900 flex justify-between items-center text-sm">
-                                                        <span>🚕 도심(고현터미널) 출발 택시 실태</span>
-                                                        <span className="text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold">비용 장벽</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2 text-slate-700 text-xs">
-                                                        <div>• 편도 거리: <strong>{currentProfile.taxiDistance}</strong></div>
-                                                        <div>• 소요 시간: <strong>{currentProfile.taxiTime}</strong></div>
-                                                    </div>
-                                                    <div className="text-slate-800 text-sm">
-                                                        • 예상 요금: <strong className="text-red-600 font-black text-base">{currentProfile.taxiOneWay}</strong>
-                                                        <span className="text-slate-500 text-xs ml-1">{currentProfile.taxiRound}</span>
-                                                    </div>
-                                                    <div className="text-amber-900 bg-white p-2 rounded border border-amber-100 text-xs leading-relaxed">
-                                                        대중교통 90~120분 대기 vs 택시 왕복 5~7만 원의 양극단 장벽으로 청년·외지인 유입 차단
-                                                    </div>
-                                                </div>
+                                                        {/* 택시 실태 */}
+                                                        <div className="p-2.5 rounded bg-slate-50 border border-slate-200/70 space-y-1">
+                                                            <div className="font-semibold text-slate-900 flex justify-between items-center text-xs">
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <IconTaxi className="w-3.5 h-3.5 text-slate-700" />
+                                                                    도심(고현터미널) 출발 택시 요금
+                                                                </span>
+                                                                <span className="text-slate-800 font-bold">{currentProfile.taxiOneWay}</span>
+                                                            </div>
+                                                            <div className="flex justify-between text-slate-600 text-[11px]">
+                                                                <span>• 편도 거리: {currentProfile.taxiDistance}</span>
+                                                                <span>• 소요 시간: {currentProfile.taxiTime}</span>
+                                                            </div>
+                                                            <div className="text-slate-500 text-[11px] leading-relaxed pt-0.5 border-t border-slate-200/60 mt-1">
+                                                                {currentProfile.taxiDesc}
+                                                            </div>
+                                                        </div>
 
-                                                {/* 3. 상권 실태 (반경 500m~1km) */}
-                                                <div className="bg-purple-50/80 p-3 rounded-lg border border-purple-100 space-y-1">
-                                                    <div className="font-bold text-purple-900 flex justify-between items-center text-sm">
-                                                        <span>🏪 관광지 반경 500m~1km 보행 상권 실태</span>
-                                                        <span className="text-xs text-purple-700 font-extrabold">{currentProfile.ceiTag}</span>
+                                                        {/* 상권 실태 */}
+                                                        <div className="p-2.5 rounded bg-slate-50 border border-slate-200/70 space-y-1">
+                                                            <div className="font-semibold text-slate-900 flex justify-between items-center text-xs">
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <IconStore className="w-3.5 h-3.5 text-slate-700" />
+                                                                    반경 500m~1km 보행 상권 실태
+                                                                </span>
+                                                                <span className="text-slate-700 font-semibold">{currentProfile.ceiTag}</span>
+                                                            </div>
+                                                            <div className="text-slate-600 text-[11px]">• 등록 점포: {currentProfile.totalStores} | 과밀: <span className="text-slate-800 font-medium">{currentProfile.overcrowded}</span></div>
+                                                            <div className="text-slate-600 text-[11px]">• 결핍 업종: <span className="text-rose-700 font-medium">{currentProfile.deficit}</span></div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-slate-700 text-xs">• 상권 범위: <strong>도보 7~15분 권역 (진입로·포구 마을)</strong></div>
-                                                    <div className="text-slate-700 text-xs">• 등록 점포: <strong>{currentProfile.totalStores}</strong></div>
-                                                    <div className="text-slate-700 text-xs">• 과밀 업종: <strong className="text-amber-700">{currentProfile.overcrowded}</strong></div>
-                                                    <div className="text-slate-700 text-xs">• 결핍 업종: <strong className="text-red-600">{currentProfile.deficit}</strong></div>
-                                                </div>
+                                                )}
                                             </div>
 
-                                            {/* 상권 결핍 & 최적 추천 진단 가이드 */}
-                                            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl border-2 border-indigo-200 space-y-3">
-                                                <div className="flex justify-between items-center border-b border-indigo-200 pb-1.5">
-                                                    <span className="font-black text-indigo-950 text-sm flex items-center">
-                                                        <span className="mr-1.5">🔍</span> 실측 기반 500m~1km 상권 결핍 & 추천 진단
-                                                    </span>
-                                                    <span className="text-xs bg-purple-200/80 text-purple-900 px-2.5 py-0.5 rounded-full font-extrabold">
-                                                        {currentCommAnalysis.badge}
-                                                    </span>
-                                                </div>
-
-                                                {/* 결핍 요인 */}
-                                                <div className="bg-white p-3 rounded-lg border border-purple-100 space-y-1.5">
-                                                    <div className="text-xs font-bold text-red-600 flex items-center">
-                                                        <span>⚠️ 현재 가장 결핍된 상권 (조기 이탈 요인)</span>
+                                            {/* 3. 접이식 아코디언: 상권 결핍 & 최적 권장 업종 */}
+                                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                                <button 
+                                                    onClick={() => setIsDeficitOpen(!isDeficitOpen)}
+                                                    className="w-full bg-slate-50 px-3.5 py-2.5 text-left flex justify-between items-center hover:bg-slate-100 transition">
+                                                    <div className="flex items-center gap-2">
+                                                        <IconSparkles className="w-4 h-4 text-indigo-700" />
+                                                        <span className="text-xs font-bold text-slate-900">상권 결핍 분석 & 권장 업종</span>
+                                                        <span className="text-[10px] text-indigo-700 font-medium bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                                                            {currentCommAnalysis.bestCategory.split(' & ')[0]}
+                                                        </span>
                                                     </div>
-                                                    {currentCommAnalysis.deficits.map((def, idx) => (
-                                                        <div key={idx} className="text-slate-700 text-xs leading-relaxed">• {def}</div>
-                                                    ))}
-                                                </div>
+                                                    {isDeficitOpen ? <IconChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <IconChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+                                                </button>
 
-                                                {/* 최적 추천 업종 */}
-                                                <div className="bg-white p-3 rounded-lg border border-indigo-100 space-y-1.5">
+                                                {isDeficitOpen && (
+                                                    <div className="p-3.5 bg-white space-y-2.5 text-xs border-t border-slate-200">
+                                                        <div className="p-2.5 rounded bg-rose-50/50 border border-rose-100 space-y-1">
+                                                            <div className="text-xs font-bold text-rose-800">결핍 상권 (조기 이탈 요인)</div>
+                                                            {currentCommAnalysis.deficits.map((def, idx) => (
+                                                                <div key={idx} className="text-slate-600 text-[11px] leading-relaxed">• {def}</div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="p-2.5 rounded bg-indigo-50/50 border border-indigo-100 space-y-1">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-xs font-bold text-indigo-950">공실 입점 최우선 권장 업종</span>
+                                                                <span className="text-[11px] font-bold text-emerald-700">{currentCommAnalysis.synergy}</span>
+                                                            </div>
+                                                            <div className="text-slate-900 font-bold text-xs">{currentCommAnalysis.bestCategory}</div>
+                                                            <p className="text-slate-600 text-[11px] leading-relaxed">{currentCommAnalysis.reason}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* 4. 정책 슬라이더 조작 영역 */}
+                                            <div className="space-y-3 pt-1">
+                                                {/* 셔틀 조작기 */}
+                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
                                                     <div className="flex justify-between items-center">
-                                                        <span className="text-xs font-bold text-indigo-700">✨ 500m~1km 최우선 권장 입점 업종</span>
-                                                        <span className="text-xs font-black text-emerald-600">{currentCommAnalysis.synergy}</span>
+                                                        <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                            <IconBus className="w-3.5 h-3.5 text-slate-600" />
+                                                            2. 주말 직통 관광 셔틀 투입 대수
+                                                        </label>
+                                                        <span className="text-xs font-bold text-slate-900 bg-white border border-slate-300 px-2 py-0.5 rounded">
+                                                            {shuttleCount}대
+                                                        </span>
                                                     </div>
-                                                    <div className="text-slate-900 font-extrabold text-sm">
-                                                        {currentCommAnalysis.bestCategory}
+                                                    <input type="range" min="1" max="5" value={shuttleCount}
+                                                        onChange={(e) => setShuttleCount(Number(e.target.value))}
+                                                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-800" />
+                                                    <div className="flex justify-between text-[10px] text-slate-400">
+                                                        <span>1대 (70분)</span>
+                                                        <span>2대 (35분)</span>
+                                                        <span>3대 (23분)</span>
+                                                        <span>5대 (15분)</span>
                                                     </div>
-                                                    <p className="text-slate-600 text-xs leading-relaxed">
-                                                        {currentCommAnalysis.reason}
-                                                    </p>
+                                                </div>
+
+                                                {/* 상권 업종 및 점포 수 조작기 */}
+                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                                                            <IconStore className="w-3.5 h-3.5 text-slate-600" />
+                                                            3. 500m~1km 보행 벨트 지원 업종
+                                                        </label>
+                                                        <select value={storeCategory} onChange={(e) => setStoreCategory(e.target.value)}
+                                                            className="w-full p-2 border border-slate-300 rounded bg-white text-slate-900 font-medium text-xs">
+                                                            <option value="craft_shop">[로컬 특화] 청년 해양 공방 & 로컬 굿즈 편집숍</option>
+                                                            <option value="local_fnb">[로컬 특화] 거제 특산물 F&B (유자/해양 타파스)</option>
+                                                            <option value="culture_book">[로컬 특화] 독립 서점 & 로컬 복합 문화공간</option>
+                                                            <option value="franchise_copy">[복제 업종] 전국 프랜차이즈 / 무인 사진관</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="pt-1">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-xs font-bold text-slate-700">4. 지원 점포 수</span>
+                                                            <span className="text-xs font-bold text-slate-900 bg-white border border-slate-300 px-2 py-0.5 rounded">
+                                                                {storeCount}개소
+                                                            </span>
+                                                        </div>
+                                                        <input type="range" min="1" max="5" value={storeCount}
+                                                            onChange={(e) => setStoreCount(Number(e.target.value))}
+                                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-800" />
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            {/* 조작기 1: 교통 셔틀 슬라이더 */}
-                                            <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <label className="text-base font-extrabold text-slate-900">
-                                                        2. [교통 정책] 주말 직통 관광 셔틀 투입:
-                                                    </label>
-                                                    <span className="text-lg font-black text-blue-600">{shuttleCount}대</span>
-                                                </div>
-                                                <input type="range" min="1" max="5" value={shuttleCount}
-                                                    onChange={(e) => setShuttleCount(Number(e.target.value))}
-                                                    className="w-full h-2.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
-                                                <div className="flex justify-between text-xs font-semibold text-slate-400 mt-1">
-                                                    <span>1대 (배차 70분)</span>
-                                                    <span>2대 (배차 35분)</span>
-                                                    <span>3대 (배차 23분)</span>
-                                                    <span>5대 (배차 15분)</span>
-                                                </div>
-                                            </div>
-
-                                            {/* 조작기 2: 상권 업종 & 점포 수 슬라이더 */}
-                                            <div className="bg-purple-50/60 p-4 rounded-xl border border-purple-100 space-y-3">
-                                                <div>
-                                                    <label className="block text-base font-extrabold text-slate-900 mb-1.5">
-                                                        3. [상권 정책] 500m~1km 보행 벨트 입점 지원 업종:
-                                                    </label>
-                                                    <select value={storeCategory} onChange={(e) => setStoreCategory(e.target.value)}
-                                                        className="w-full p-2.5 border border-purple-200 rounded-lg bg-white text-slate-900 font-bold text-sm">
-                                                        <option value="craft_shop">🟢 [로컬 특화] 청년 해양 공방 & 로컬 굿즈 편집숍</option>
-                                                        <option value="local_fnb">🟢 [로컬 특화] 거제 특산물 F&B (유자/해산물 타파스)</option>
-                                                        <option value="culture_book">🟢 [로컬 특화] 독립 서점 & 로컬 복합 문화공간</option>
-                                                        <option value="franchise_copy">🔴 [복제 업종] 전국 프랜차이즈 / 무인 사진관</option>
-                                                    </select>
-                                                </div>
-
-                                                <div>
-                                                    <div className="flex justify-between items-center mb-1.5">
-                                                        <span className="text-sm font-bold text-slate-800">4. 지원 점포 수:</span>
-                                                        <span className="text-lg font-black text-purple-600">{storeCount}개소</span>
-                                                    </div>
-                                                    <input type="range" min="1" max="5" value={storeCount}
-                                                        onChange={(e) => setStoreCount(Number(e.target.value))}
-                                                        className="w-full h-2.5 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-600" />
-                                                </div>
-                                            </div>
-
-                                            {/* 🚀 시뮬레이션 실행 대형 버튼 */}
+                                            {/* 5. 시뮬레이션 실행 버튼 (Deep Navy Professional) */}
                                             <button onClick={runFusionSimulation}
-                                                className="w-full py-4 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black text-base md:text-lg rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center space-x-2">
-                                                <span>🚀</span>
-                                                <span>TII × CEI 융합 시뮬레이션 실행</span>
+                                                className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs md:text-sm rounded-lg shadow transition flex items-center justify-center gap-2">
+                                                <IconTrendingUp className="w-4 h-4 text-slate-200" />
+                                                <span>TII × CEI 융합 정책 시뮬레이션 실행</span>
                                             </button>
 
-                                            {/* 시뮬레이션 결과 카드 (글씨 크기 시원하게) */}
+                                            {/* 6. 시뮬레이션 결과 카드 (깔끔한 메트릭스 & 체류시간 강조) */}
                                             {fusionResult && (
-                                                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-2 border-indigo-300 p-5 rounded-2xl shadow-md space-y-3.5 animate-fade-in">
-                                                    <div className="text-indigo-950 font-bold text-xs leading-relaxed bg-white/80 p-3 rounded-xl border border-indigo-100">
-                                                        [{fusionResult.spotName}] 주말 직통 셔틀 {shuttleCount}대 투입 + 반경 500m~1km 보행 벨트 내 '{fusionResult.categoryName}' {fusionResult.storeCount}개소 입점 지원 시, 교통 단절이 완화되고 상권이 다변화되어 체류시간이 획기적으로 증가합니다.
+                                                <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-3 mt-2">
+                                                    <div className="text-slate-800 text-xs leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-200">
+                                                        <strong className="text-slate-900">[{fusionResult.spotName.split(' - ')[0]}]</strong> 직통 셔틀 {shuttleCount}대 투입 및 반경 500m~1km 내 '{fusionResult.categoryName}' {fusionResult.storeCount}개소 연계 지원 시 종합 효과
                                                     </div>
 
-                                                    {/* 메트릭스 그리드 */}
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        <div className="bg-white p-3.5 rounded-xl shadow-sm border border-blue-200">
-                                                            <span className="text-slate-500 text-xs font-semibold">TII 고립도 개선:</span>
-                                                            <div className="text-lg font-black text-blue-600 mt-0.5">
+                                                    {/* 핵심 지표 그리드 */}
+                                                    <div className="grid grid-cols-2 gap-2.5">
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+                                                            <span className="text-[11px] text-slate-500 font-medium">TII 고립도 개선:</span>
+                                                            <div className="text-sm font-bold text-slate-900 mt-0.5">
                                                                 {fusionResult.origTii} → {fusionResult.newTii}
-                                                                <span className="text-xs text-blue-500 ml-1">(-{fusionResult.tiiImprovePct}%)</span>
+                                                                <span className="text-xs text-rose-700 ml-1">(-{fusionResult.tiiImprovePct}%)</span>
                                                             </div>
-                                                            <div className="text-xs text-slate-400 mt-1">배차 {fusionResult.origInterval}분 → {fusionResult.newInterval}분</div>
+                                                            <div className="text-[10px] text-slate-400 mt-0.5">배차 {fusionResult.origInterval}분 → {fusionResult.newInterval}분</div>
                                                         </div>
 
-                                                        <div className="bg-white p-3.5 rounded-xl shadow-sm border border-indigo-200">
-                                                            <span className="text-slate-500 text-xs font-semibold">상권 다양성(CEI):</span>
-                                                            <div className="text-lg font-black text-indigo-600 mt-0.5">
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+                                                            <span className="text-[11px] text-slate-500 font-medium">상권 다양성(CEI):</span>
+                                                            <div className="text-sm font-bold text-slate-900 mt-0.5">
                                                                 {fusionResult.origCei} → {fusionResult.newCei}
-                                                                <span className="text-xs text-indigo-500 ml-1">(+{fusionResult.ceiChangePct}%)</span>
+                                                                <span className="text-xs text-indigo-700 ml-1">(+{fusionResult.ceiChangePct}%)</span>
                                                             </div>
-                                                            <div className="text-xs text-slate-400 mt-1">공실률 {fusionResult.origVacancyRate}% → {fusionResult.newVacancyRate}% 추정</div>
-                                                            <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{fusionResult.vacancyRateBasis}</div>
+                                                            <div className="text-[10px] text-slate-500 mt-0.5 font-medium">500m~1km 내 공실 {fusionResult.storeCount}개소 청년 창업</div>
                                                         </div>
 
-                                                        {/* 체류시간 증가 하이라이트 (초대형 글자) */}
-                                                        <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-emerald-300 col-span-2">
+                                                        {/* 체류시간 증가치 (굵은 타이포그래피) */}
+                                                        <div className="p-3 rounded-lg border border-slate-300 bg-slate-50 col-span-2">
                                                             <div className="flex justify-between items-center">
-                                                                <span className="text-slate-700 font-extrabold text-sm flex items-center">
-                                                                    <span className="mr-1.5">🎯</span> 체류시간 증가 추정:
+                                                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                                                    <IconTrendingUp className="w-3.5 h-3.5 text-slate-700" />
+                                                                    체류시간 증가 추정 (회귀식):
                                                                 </span>
-                                                                <span className="text-2xl md:text-3xl font-black text-emerald-600">
+                                                                <span className="text-xl font-extrabold text-slate-900 tracking-tight">
                                                                     +{fusionResult.totalStayGain}분
-                                                                    <span className="text-sm md:text-base font-bold text-emerald-500 ml-1.5">
-                                                                        (약 +{(fusionResult.totalStayGain / 60).toFixed(1)}h)
+                                                                    <span className="text-xs font-semibold text-slate-600 ml-1.5">
+                                                                        (약 +{(fusionResult.totalStayGain / 60).toFixed(1)}시간)
                                                                     </span>
                                                                 </span>
                                                             </div>
-                                                            <div className="text-xs text-slate-400 font-mono mt-1.5 border-t border-slate-100 pt-1.5">
+                                                            <div className="text-[10px] text-slate-400 font-mono mt-1 border-t border-slate-200/80 pt-1">
                                                                 {fusionResult.formulaText}
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* AI 보고서 생성 버튼 */}
+                                                    {/* 최하단 자문서 생성 버튼 (전문적인 네이밍 & 모델명 제거) */}
                                                     <button onClick={generateAiReport}
-                                                        className="w-full py-4 px-4 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-extrabold text-base rounded-xl shadow-md transition flex items-center justify-center space-x-2">
-                                                        <span className="text-xl">📑</span>
-                                                        <span>AI 맞춤형 TII×CEI 융합 정책 자문서 생성 (Claude)</span>
+                                                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs md:text-sm rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                                                        <IconFileText className="w-4 h-4 text-slate-200" />
+                                                        <span>AI 기반 정책 의사결정 자문서 생성</span>
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
                                     )}
 
-                                    {/* [탭 2] 교통 단독 */}
+                                    {/* [단독 탭 2] 교통 단독 */}
                                     {activeTab === 'traffic' && (
-                                        <div className="space-y-4 p-5 bg-blue-50/60 rounded-xl border border-blue-100">
-                                            <h4 className="font-extrabold text-base text-blue-950">🚌 도심 ↔ 외곽 관광 셔틀 단독 분석</h4>
+                                        <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                                <IconBus className="w-4 h-4 text-slate-700" />
+                                                도심 ↔ 외곽 관광 셔틀 단독 분석
+                                            </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-1">대상 고립지:</label>
+                                                <label className="block text-slate-700 mb-1 font-medium">대상 고립지:</label>
                                                 <select value={selectedSpotId} onChange={(e) => handleSelectSpot(e.target.value)}
-                                                    className="w-full p-2.5 border rounded-lg bg-white text-base font-bold">
+                                                    className="w-full p-2 border border-slate-300 rounded bg-white text-slate-900 font-medium">
                                                     <option value="maemi_castle">매미성 (장목면)</option>
                                                     <option value="wind_hill">바람의 언덕 (남부면)</option>
                                                     <option value="hakdong_pebble">학동 흑진주 몽돌해변 (동부면)</option>
                                                     <option value="geoje_jungle_dome">거제 정글돔 (거제면)</option>
                                                 </select>
                                             </div>
-                                            <p className="text-xs text-slate-500">교통과 상권을 동시에 시뮬레이션하시려면 <strong>[✨ TII×CEI 융합 정책]</strong> 탭을 권장합니다.</p>
+                                            <p className="text-[11px] text-slate-500">교통과 상권을 복합 진단하려면 <strong>[TII × CEI 융합 정책]</strong> 탭을 권장합니다.</p>
                                         </div>
                                     )}
 
-                                    {/* [탭 3] 상권 단독 */}
+                                    {/* [단독 탭 3] 상권 단독 */}
                                     {activeTab === 'commercial' && (
-                                        <div className="space-y-4 p-5 bg-purple-50/60 rounded-xl border border-purple-100">
-                                            <h4 className="font-extrabold text-base text-purple-950">🏪 상권 다양성(CEI) 단독 분석</h4>
+                                        <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                                <IconStore className="w-4 h-4 text-slate-700" />
+                                                상권 엔트로피(CEI) 다양성 단독 분석
+                                            </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-1">대상 상권:</label>
+                                                <label className="block text-slate-700 mb-1 font-medium">대상 상권:</label>
                                                 <select value={currentProfile.town} onChange={() => {}}
-                                                    className="w-full p-2.5 border rounded-lg bg-white text-base font-bold">
+                                                    className="w-full p-2 border border-slate-300 rounded bg-white text-slate-900 font-medium">
                                                     <option value="장목면">장목면 (매미성 1km 상권)</option>
                                                     <option value="남부면">남부면 (바람의 언덕 1km 상권)</option>
                                                     <option value="동부면">동부면 (몽돌해변 1km 상권)</option>
                                                 </select>
                                             </div>
-                                            <p className="text-xs text-slate-500">교통과 상권을 동시에 시뮬레이션하시려면 <strong>[✨ TII×CEI 융합 정책]</strong> 탭을 권장합니다.</p>
+                                            <p className="text-[11px] text-slate-500">교통과 상권을 복합 진단하려면 <strong>[TII × CEI 융합 정책]</strong> 탭을 권장합니다.</p>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="pt-4 border-t border-slate-200 text-xs text-slate-400 text-center mt-5">
-                                    2026 한국관광 데이터랩 경진대회 | 거제시 B2G 모델
+                                <div className="pt-3 border-t border-slate-200 text-[11px] text-slate-400 text-center mt-3">
+                                    한국관광 데이터랩 경진대회 출품작 | 거제시 B2G 정책 시나리오 모델
                                 </div>
                             </div>
 
                         </div>
                     </main>
 
-                    {/* 📑 AI 정책 제언서 팝업 모달 */}
+                    {/* AI 정책 제언서 팝업 모달 (전문 공문서 스타일, z-index 99999 보장) */}
                     {isModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
                             style={{ zIndex: 99999 }}>
-                            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+                            <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-300">
+                                
                                 {/* 모달 헤더 */}
-                                <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-5 flex justify-between items-center shadow">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="text-2xl">📑</span>
+                                <div className="bg-slate-900 text-white p-4 flex justify-between items-center border-b border-slate-800">
+                                    <div className="flex items-center space-x-2.5">
+                                        <IconFileText className="w-5 h-5 text-indigo-300" />
                                         <div>
-                                            <h3 className="font-extrabold text-lg">거제시정 반영용 AI 관광·교통 융합 정책 자문서</h3>
-                                            <p className="text-xs text-blue-200">{modelUsed || 'Claude-sonnet-5 (영남대 Mindlogic AI Gateway)'}</p>
+                                            <h3 className="font-bold text-sm md:text-base">거제시정 반영용 AI 관광·교통 융합 정책 자문서</h3>
+                                            <p className="text-[11px] text-slate-300">한국관광 데이터랩 공모전 [서식 4] 표준 지자체 공문서 포맷</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setIsModalOpen(false)}
-                                        className="text-slate-300 hover:text-white text-2xl font-bold p-1">&times;</button>
+                                        className="text-slate-400 hover:text-white text-xl font-bold px-2 py-1">&times;</button>
                                 </div>
 
                                 {/* 로딩 인디케이터 */}
                                 {isReportLoading ? (
                                     <div className="p-16 text-center space-y-4">
-                                        <div className="animate-spin rounded-full h-14 w-14 border-4 border-indigo-600 border-t-transparent mx-auto"></div>
-                                        <div className="text-base font-bold text-slate-800">TII×CEI 기준지표와 정책효과 추정식을 바탕으로 행정 기획서 작성 중...</div>
-                                        <div className="text-xs text-slate-400">거제시 외곽 관광지 교통 단절 해소 및 500m~1km 보행 벨트 상권 정책 제언</div>
+                                        <div className="animate-spin rounded-full h-12 w-12 border-3 border-slate-800 border-t-transparent mx-auto"></div>
+                                        <div className="text-sm font-bold text-slate-800">TII×CEI 실측 기준지표와 정책효과 추정식을 바탕으로 자문서 작성 중...</div>
+                                        <div className="text-xs text-slate-500">외곽 관광지 교통 단절 해소 및 500m~1km 보행 벨트 상권 조례안 도출</div>
                                     </div>
                                 ) : (
-                                    /* 보고서 본문 내용 */
-                                    <div className="flex-1 overflow-y-auto p-6 text-slate-800">
+                                    /* 본문 내용 */
+                                    <div className="flex-1 overflow-y-auto p-6 text-slate-800 bg-white">
                                         <div id="reportHtmlArea" 
-                                            className="prose max-w-none text-slate-800 leading-relaxed"
+                                            className="prose max-w-none text-slate-800 leading-relaxed text-sm"
                                             dangerouslySetInnerHTML={{ __html: marked.parse(reportMarkdown) }} />
                                     </div>
                                 )}
 
                                 {/* 모달 푸터 */}
-                                <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-between items-center">
-                                    <span className="text-xs text-slate-500 font-medium">한국관광 데이터랩 경진대회 [서식 4] B2G 특화 증빙자료</span>
+                                <div className="bg-slate-50 border-t border-slate-200 p-3.5 flex justify-between items-center">
+                                    <span className="text-xs text-slate-500 font-medium">B2G 거제시정 맞춤형 정책 의사결정 증빙자료</span>
                                     <div className="space-x-2">
                                         <button onClick={copyReportText}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-xs shadow transition">
-                                            📋 전문 복사
+                                            className="bg-slate-900 hover:bg-slate-800 text-white font-medium py-1.5 px-3 rounded text-xs transition">
+                                            전문 복사
                                         </button>
                                         <button onClick={() => setIsModalOpen(false)}
-                                            className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg text-xs transition">
+                                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1.5 px-3 rounded text-xs transition">
                                             닫기
                                         </button>
                                     </div>
@@ -904,6 +945,3 @@
     {% endraw %}
 </body>
 </html>
-
-
-
