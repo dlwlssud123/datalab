@@ -4,13 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        #map { height: 750px; width: 100%; border-radius: 0.5rem; }
+        #map { height: 750px; width: 100%; border-radius: 0.5rem; z-index: 10; }
+        .leaflet-pane { z-index: 10 !important; }
+        
+        /* 공문서 마크다운 스타일 */
+        #reportHtmlArea h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.3rem; }
+        #reportHtmlArea h2 { font-size: 1.25rem; font-weight: 700; color: #334155; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        #reportHtmlArea h3 { font-size: 1.05rem; font-weight: 700; color: #475569; margin-top: 1rem; margin-bottom: 0.4rem; }
+        #reportHtmlArea p { margin-bottom: 0.75rem; line-height: 1.7; color: #334155; }
+        #reportHtmlArea ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+        #reportHtmlArea li { margin-bottom: 0.25rem; line-height: 1.6; }
+        #reportHtmlArea strong { font-weight: 700; color: #1e3a8a; }
+        #reportHtmlArea hr { border-color: #cbd5e1; margin: 1.25rem 0; }
+        #reportHtmlArea blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #475569; background: #f8fafc; padding-top: 0.5rem; padding-bottom: 0.5rem; border-radius: 0.25rem; }
+        #reportHtmlArea table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        #reportHtmlArea th, #reportHtmlArea td { border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+        #reportHtmlArea th { background: #f1f5f9; font-weight: bold; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -41,21 +56,119 @@
             </div>
 
             <!-- 오른쪽: 컨트롤러 패널 (1칸) -->
-            <div class="bg-white p-4 rounded-lg shadow-lg flex flex-col justify-between h-[750px]">
+            <div class="bg-white p-4 rounded-lg shadow-lg flex flex-col justify-between h-[750px] overflow-y-auto">
                 
                 <div>
                     <!-- 탭 전환 버튼 -->
-                    <div class="flex border-b mb-4">
-                        <button id="tabBtn1" onclick="switchTab('traffic')" class="flex-1 py-2 text-sm font-bold border-b-2 border-blue-600 text-blue-600">
-                            🚌 교통 셔틀 시뮬레이션
+                    <div class="flex border-b mb-3">
+                        <button id="tabBtn1" onclick="switchTab('fusion')" class="flex-1 py-2 text-xs font-extrabold border-b-2 border-indigo-600 text-indigo-700">
+                            ✨ TII×CEI 융합 정책
                         </button>
-                        <button id="tabBtn2" onclick="switchTab('commercial')" class="flex-1 py-2 text-sm font-bold text-gray-400 hover:text-gray-600">
-                            🏪 상권 다양성(CEI) 시뮬레이션
+                        <button id="tabBtn2" onclick="switchTab('traffic')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-gray-600">
+                            🚌 교통 셔틀만
+                        </button>
+                        <button id="tabBtn3" onclick="switchTab('commercial')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-gray-600">
+                            🏪 상권 다양성만
                         </button>
                     </div>
 
-                    <!-- [탭 1] 교통 셔틀 시뮬레이터 -->
-                    <div id="trafficTab">
+                    <!-- [탭 1] ✨ TII × CEI 융합 정책 시뮬레이터 (사용자 추천 메인) -->
+                    <div id="fusionTab">
+                        <div class="space-y-2.5 bg-gradient-to-br from-indigo-50 to-blue-50 p-3 rounded-lg border border-indigo-100 text-xs mb-3">
+                            <div>
+                                <label class="block font-bold text-gray-800 mb-1">1. 진단 대상 관광 고립지 선택:</label>
+                                <select id="fusionTarget" class="w-full p-1.5 border rounded bg-white text-gray-900 font-medium" onchange="updateSpotDiagnostic()">
+                                    <option value="wind_hill" data-interval="120" data-tii="0.95" data-cei="0.65" data-town="남부면">바람의 언덕 / 신선대 (남부면) - Tmap 1위</option>
+                                    <option value="maemi_castle" data-interval="95" data-tii="0.37" data-cei="0.64" data-town="장목면">매미성 (장목면) - Tmap 2위</option>
+                                    <option value="hakdong_pebble" data-interval="80" data-tii="0.13" data-cei="0.63" data-town="동부면">학동 흑진주 몽돌해변 (동부면)</option>
+                                    <option value="geoje_jungle_dome" data-interval="110" data-tii="0.24" data-cei="0.82" data-town="거제면">거제 정글돔 (거제면)</option>
+                                </select>
+                            </div>
+
+                            <!-- 실시간 실측 현황판 -->
+                            <div class="grid grid-cols-2 gap-2 bg-white p-2 rounded border border-indigo-100">
+                                <div>
+                                    <span class="text-gray-500 text-[11px]">현재 교통 고립도(TII):</span>
+                                    <div class="text-xs font-bold text-red-600" id="diagTii">0.95 (극심한 단절)</div>
+                                    <div class="text-[10px] text-gray-400" id="diagInterval">버스 배차 120분</div>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 text-[11px]">현재 상권 다양성(CEI):</span>
+                                    <div class="text-xs font-bold text-amber-600" id="diagCei">0.65 (상권 획일화)</div>
+                                    <div class="text-[10px] text-gray-400">숙박·횟집 편중</div>
+                                </div>
+                            </div>
+
+                            <!-- 정책 1: 교통 인프라 -->
+                            <div>
+                                <label class="block font-bold text-gray-800 mb-1">
+                                    2. [교통 정책] 주말 직통 관광 셔틀: <span id="fusionShuttleVal" class="text-blue-600 font-bold">2대</span>
+                                </label>
+                                <input type="range" id="fusionShuttleCount" min="1" max="5" value="2" class="w-full cursor-pointer"
+                                    oninput="document.getElementById('fusionShuttleVal').innerText = this.value + '대'">
+                            </div>
+
+                            <!-- 정책 2: 상권 인프라 -->
+                            <div>
+                                <label class="block font-bold text-gray-800 mb-1">3. [상권 정책] 정류장 연계 공실 지원 업종:</label>
+                                <select id="fusionStoreCategory" class="w-full p-1.5 border rounded bg-white text-gray-800 font-medium">
+                                    <option value="craft_shop">🟢 [로컬 특화] 청년 해양 공방 & 로컬 굿즈 편집숍</option>
+                                    <option value="local_fnb">🟢 [로컬 특화] 거제 특산물 F&B (유자/해산물 타파스)</option>
+                                    <option value="culture_book">🟢 [로컬 특화] 독립 서점 & 로컬 복합 문화공간</option>
+                                    <option value="franchise_copy">🔴 [복제 업종] 전국 프랜차이즈 / 무인 사진관</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-bold text-gray-800 mb-1">
+                                    4. 지원 점포 수: <span id="fusionStoreVal" class="text-indigo-600 font-bold">2개소</span>
+                                </label>
+                                <input type="range" id="fusionStoreCount" min="1" max="5" value="2" class="w-full cursor-pointer"
+                                    oninput="document.getElementById('fusionStoreVal').innerText = this.value + '개소'">
+                            </div>
+
+                            <button onclick="runFusionSimulation()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-90 text-white font-extrabold py-2.5 px-4 rounded shadow">
+                                🚀 TII × CEI 융합 시뮬레이션 실행
+                            </button>
+                        </div>
+
+                        <!-- 융합 결과 카드 -->
+                        <div id="fusionResultCard" class="hidden">
+                            <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border border-indigo-200 p-3 rounded-lg space-y-2 text-xs">
+                                <div class="text-indigo-950 font-bold text-xs leading-relaxed" id="fusionSummary"></div>
+
+                                <!-- 핵심 수치 4칸 그리드 -->
+                                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-200">
+                                    <div class="bg-white p-2 rounded shadow-sm border border-blue-100">
+                                        <span class="text-gray-500 text-[10px]">TII 고립도 개선:</span>
+                                        <div class="text-sm font-extrabold text-blue-600" id="resFusionTii"></div>
+                                        <div class="text-[10px] text-gray-400" id="resFusionInterval"></div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded shadow-sm border border-indigo-100">
+                                        <span class="text-gray-500 text-[10px]">상권 다양성(CEI):</span>
+                                        <div class="text-sm font-extrabold text-indigo-600" id="resFusionCei"></div>
+                                        <div class="text-[10px] text-gray-400" id="resFusionVacant"></div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded shadow-sm border border-emerald-100 col-span-2">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 font-bold text-[11px]">체류시간 증가 (🤖 NumPy Ridge):</span>
+                                            <span class="text-base font-black text-emerald-600" id="resFusionStay"></span>
+                                        </div>
+                                        <div class="text-[10px] text-gray-400 font-mono mt-0.5" id="resFusionFormula"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 🤖 AI 정책 제언서 생성 버튼 -->
+                                <button onclick="generateAiReport()" id="genReportBtn" class="w-full mt-2 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-extrabold py-2.5 px-3 rounded shadow-md flex items-center justify-center space-x-2 transition">
+                                    <span class="text-base">📑</span>
+                                    <span>AI 맞춤형 TII×CEI 융합 정책 자문서 생성 (Claude)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- [탭 2] 교통 셔틀 단독 시뮬레이터 -->
+                    <div id="trafficTab" class="hidden">
                         <div class="space-y-3 bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs mb-3">
                             <div>
                                 <label class="block font-semibold text-gray-700 mb-1">연계할 고립지 선택:</label>
@@ -107,7 +220,7 @@
                         </div>
                     </div>
 
-                    <!-- [탭 2] 상권 다양성 시뮬레이터 (새로 추가!) -->
+                    <!-- [탭 3] 상권 다양성 단독 시뮬레이터 -->
                     <div id="commercialTab" class="hidden">
                         <div class="space-y-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-xs mb-3">
                             <div>
@@ -156,7 +269,7 @@
                                         <div class="text-sm font-extrabold" id="commCeiPct"></div>
                                     </div>
                                     <div class="bg-white p-2 rounded shadow-sm">
-                                        <span class="text-gray-500">체류 증가 <span class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded font-bold">ML회귀</span>:</span>
+                                        <span class="text-gray-500">체류 증가:</span>
                                         <div class="text-sm font-extrabold text-emerald-600" id="commStay"></div>
                                     </div>
                                     <div class="bg-white p-2 rounded shadow-sm">
@@ -164,14 +277,6 @@
                                         <div class="text-sm font-extrabold text-blue-600" id="commVacant"></div>
                                     </div>
                                 </div>
-                                <div class="text-[10px] text-gray-500 bg-white p-1.5 rounded border border-purple-100 font-mono" id="commFormula">
-                                </div>
-
-                                <!-- 🤖 AI 정책 제언서 생성 버튼 -->
-                                <button onclick="generateAiReport()" id="genReportBtn" class="w-full mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded shadow flex items-center justify-center space-x-2 transition">
-                                    <span>🤖</span>
-                                    <span>AI 맞춤형 지자체 정책 제언서 생성 (Claude)</span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -194,24 +299,47 @@
 
         let shuttleRouteLine = null;
 
+
         // 탭 전환 함수
         function switchTab(tab) {
-            const tab1 = document.getElementById('trafficTab');
-            const tab2 = document.getElementById('commercialTab');
+            const tabFusion = document.getElementById('fusionTab');
+            const tabTraffic = document.getElementById('trafficTab');
+            const tabCommercial = document.getElementById('commercialTab');
             const btn1 = document.getElementById('tabBtn1');
             const btn2 = document.getElementById('tabBtn2');
+            const btn3 = document.getElementById('tabBtn3');
 
-            if (tab === 'traffic') {
-                tab1.classList.remove('hidden');
-                tab2.classList.add('hidden');
-                btn1.className = "flex-1 py-2 text-sm font-bold border-b-2 border-blue-600 text-blue-600";
-                btn2.className = "flex-1 py-2 text-sm font-bold text-gray-400 hover:text-gray-600";
+            // 초기화
+            tabFusion.classList.add('hidden');
+            tabTraffic.classList.add('hidden');
+            tabCommercial.classList.add('hidden');
+            btn1.className = "flex-1 py-2 text-xs font-bold text-gray-400 hover:text-gray-600";
+            btn2.className = "flex-1 py-2 text-xs font-bold text-gray-400 hover:text-gray-600";
+            btn3.className = "flex-1 py-2 text-xs font-bold text-gray-400 hover:text-gray-600";
+
+            if (tab === 'fusion') {
+                tabFusion.classList.remove('hidden');
+                btn1.className = "flex-1 py-2 text-xs font-extrabold border-b-2 border-indigo-600 text-indigo-700";
+            } else if (tab === 'traffic') {
+                tabTraffic.classList.remove('hidden');
+                btn2.className = "flex-1 py-2 text-xs font-extrabold border-b-2 border-blue-600 text-blue-600";
             } else {
-                tab1.classList.add('hidden');
-                tab2.classList.remove('hidden');
-                btn2.className = "flex-1 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600";
-                btn1.className = "flex-1 py-2 text-sm font-bold text-gray-400 hover:text-gray-600";
+                tabCommercial.classList.remove('hidden');
+                btn3.className = "flex-1 py-2 text-xs font-extrabold border-b-2 border-purple-600 text-purple-600";
             }
+        }
+
+        // 실시간 거점 현황 진단 표시
+        function updateSpotDiagnostic() {
+            const sel = document.getElementById('fusionTarget');
+            const opt = sel.options[sel.selectedIndex];
+            const interval = opt.getAttribute('data-interval');
+            const tii = opt.getAttribute('data-tii');
+            const cei = opt.getAttribute('data-cei');
+
+            document.getElementById('diagTii').innerText = `${tii} (${parseFloat(tii) >= 0.5 ? '극심한 단절' : '보통'})`;
+            document.getElementById('diagInterval').innerText = `버스 배차 ${interval}분`;
+            document.getElementById('diagCei').innerText = `${cei} (${parseFloat(cei) < 0.7 ? '상권 획일화' : '양호'})`;
         }
 
         // 거점 로드
@@ -239,8 +367,8 @@
                             <p class="text-gray-600 mb-2">${spot.description}</p>
                             <div class="space-y-1 bg-gray-50 p-2 rounded border">
                                 <div>배차간격: <strong>${spot.bus_interval_min}분</strong></div>
-                                <div>교통고립도(TII): <strong class="text-purple-700">${spot.tii_score}</strong></div>
-                                <div>상권다양성(CEI): <strong class="text-indigo-700">${spot.cei_score}</strong></div>
+                                <div>교통고립도(TII): <strong class="text-red-600 font-bold">${spot.tii_score}</strong></div>
+                                <div>상권다양성(CEI): <strong class="text-indigo-700 font-bold">${spot.cei_score}</strong></div>
                                 <div>월간 방문자: <strong>${Number(spot.visitors_monthly).toLocaleString()}명</strong></div>
                             </div>
                         </div>
@@ -251,7 +379,105 @@
             }
         }
 
-        // 1. 셔틀 시뮬레이션
+        // 🌟 1. [핵심] TII × CEI 융합 시뮬레이션
+        async function runFusionSimulation() {
+            const targetSelect = document.getElementById('fusionTarget');
+            const targetId = targetSelect.value;
+            const targetOpt = targetSelect.options[targetSelect.selectedIndex];
+            const townName = targetOpt.getAttribute('data-town');
+            const spotName = targetOpt.text.split(' - ')[0];
+            const origInterval = parseInt(targetOpt.getAttribute('data-interval'));
+            const origTii = parseFloat(targetOpt.getAttribute('data-tii'));
+            const origCei = parseFloat(targetOpt.getAttribute('data-cei'));
+
+            const shuttleCount = parseInt(document.getElementById('fusionShuttleCount').value);
+            const storeCategory = document.getElementById('fusionStoreCategory').value;
+            const storeCount = parseInt(document.getElementById('fusionStoreCount').value);
+
+            try {
+                // 1) 셔틀 교통 시뮬레이션 호출
+                const trafRes = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target_spot_id: targetId, shuttle_count: shuttleCount })
+                });
+                const trafData = await trafRes.json();
+
+                // 2) 상권 다양성 시뮬레이션 호출
+                const commRes = await fetch('/api/simulate-commercial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target_town: townName,
+                        store_category: storeCategory,
+                        new_store_count: storeCount
+                    })
+                });
+                const commData = await commRes.json();
+
+                // 3) 융합 지표 계산
+                const newInterval = trafData.new_interval_min;
+                const deltaInterval = origInterval - newInterval;
+                const newTii = Math.max(0.1, Number((origTii * (newInterval / origInterval)).toFixed(2)));
+                const tiiImprovePct = Math.round(((origTii - newTii) / origTii) * 100);
+
+                const newCei = commData.simulated_cei;
+                const deltaCei = Math.max(0, newCei - origCei);
+
+                // 4) 머신러닝(NumPy Ridge) 체류시간 통합 산출
+                // ΔStay = (2.13 × ΔInterval) + (411.8 × ΔCEI) + (121.9 × ΔVacancy) + 10.06
+                const stayGainFromInterval = 2.13 * deltaInterval;
+                const stayGainFromCei = 411.8 * deltaCei;
+                const stayGainFromVac = 121.9 * (0.03 * storeCount);
+                const totalStayGain = Math.round(stayGainFromInterval + stayGainFromCei + stayGainFromVac + 10.06);
+
+                // 5) UI 렌더링
+                document.getElementById('fusionResultCard').classList.remove('hidden');
+                document.getElementById('fusionSummary').innerText = 
+                    `[${spotName}] 주말 셔틀 ${shuttleCount}대 투입 + '${commData.selected_category_name}' ${storeCount}개소 연계 지원 시, ` +
+                    `교통 단절이 해소되고 상권이 다변화되어 체류시간이 획기적으로 증가합니다.`;
+
+                document.getElementById('resFusionTii').innerText = `${origTii} → ${newTii} (-${tiiImprovePct}%)`;
+                document.getElementById('resFusionInterval').innerText = `배차 ${origInterval}분 → ${newInterval}분`;
+
+                document.getElementById('resFusionCei').innerText = `${origCei} → ${newCei} (+${commData.cei_change_percent}%)`;
+                document.getElementById('resFusionVacant').innerText = `공실 ${storeCount}개소 청년 창업`;
+
+                document.getElementById('resFusionStay').innerText = `+${totalStayGain}분 (약 +${(totalStayGain / 60).toFixed(1)}시간)`;
+                document.getElementById('resFusionFormula').innerText = `📐 회귀식: ΔStay = 2.13×${deltaInterval}m + 411.8×${deltaCei.toFixed(2)} + 121.9×ΔV + 10.06`;
+
+                // 6) 지도 셔틀 경로 렌더링
+                if (shuttleRouteLine) map.removeLayer(shuttleRouteLine);
+                shuttleRouteLine = L.polyline([trafData.origin_coords, trafData.target_coords], {
+                    color: '#4F46E5',
+                    weight: 5,
+                    dashArray: '8, 8'
+                }).addTo(map);
+                map.fitBounds(shuttleRouteLine.getBounds(), { padding: [50, 50] });
+
+                // 7) AI 정책 자문서 생성을 위한 융합 데이터 보관
+                window.lastFusionReportData = {
+                    town_name: townName,
+                    spot_name: spotName,
+                    original_interval: origInterval,
+                    new_interval: newInterval,
+                    original_tii: origTii,
+                    simulated_tii: newTii,
+                    category_name: commData.selected_category_name,
+                    store_count: storeCount,
+                    original_cei: origCei,
+                    simulated_cei: newCei,
+                    cei_change_percent: commData.cei_change_percent,
+                    expected_stay_increase_min: totalStayGain
+                };
+
+            } catch (err) {
+                console.error(err);
+                alert("융합 시뮬레이션 실행 중 오류가 발생했습니다.");
+            }
+        }
+
+        // 2. 셔틀 단독 시뮬레이션
         async function runSimulation() {
             const targetId = document.getElementById('simTarget').value;
             const count = parseInt(document.getElementById('simCount').value);
@@ -284,7 +510,7 @@
             }
         }
 
-        // 2. 상권 다양성 시뮬레이션
+        // 3. 상권 단독 시뮬레이션
         async function runCommercialSim() {
             const town = document.getElementById('commTown').value;
             const cat = document.getElementById('commCategory').value;
@@ -315,34 +541,29 @@
                     pctEl.innerText = `${data.cei_change_percent}% ↓ (위험)`;
                 }
 
-                document.getElementById('commStay').innerText = `+${data.expected_stay_increase_min}분 (약 +${(data.expected_stay_increase_min / 60).toFixed(1)}h)`;
+                document.getElementById('commStay').innerText = `+${data.expected_stay_increase_min}분`;
                 document.getElementById('commVacant').innerText = `${data.vacant_resolved_count}개소 해소`;
-                if (data.ml_formula) {
-                    document.getElementById('commFormula').innerText = `📐 회귀식: ${data.ml_formula}`;
-                }
-
-                // AI 리포트 생성을 위한 최근 데이터 보관
-                window.lastCommercialData = {
-                    town_name: town,
-                    category_name: data.selected_category_name,
-                    store_count: count,
-                    original_cei: data.original_cei,
-                    simulated_cei: data.simulated_cei,
-                    cei_change_percent: data.cei_change_percent,
-                    expected_stay_increase_min: data.expected_stay_increase_min
-                };
-
             } catch (err) {
                 alert("상권 시뮬레이션 실패");
             }
         }
 
-        // 3. 🤖 AI 맞춤형 정책 제언 리포트 생성 (Claude-sonnet-5)
+        // 4. 🤖 AI 맞춤형 TII × CEI 융합 정책 자문서 생성 (Claude-sonnet-5)
         async function generateAiReport() {
-            if (!window.lastCommercialData) {
-                alert("먼저 상권 시뮬레이션을 실행해 주세요!");
-                return;
-            }
+            const reportData = window.lastFusionReportData || {
+                town_name: "남부면",
+                spot_name: "바람의 언덕 / 신선대",
+                original_interval: 120,
+                new_interval: 25,
+                original_tii: 0.95,
+                simulated_tii: 0.18,
+                category_name: "청년 해양 공방 & 로컬 굿즈 편집숍",
+                store_count: 2,
+                original_cei: 0.65,
+                simulated_cei: 0.83,
+                cei_change_percent: 27.7,
+                expected_stay_increase_min: 296
+            };
 
             const modal = document.getElementById('reportModal');
             const loading = document.getElementById('reportLoading');
@@ -352,13 +573,13 @@
             modal.classList.remove('hidden');
             loading.classList.remove('hidden');
             content.classList.add('hidden');
-            btn.disabled = true;
+            if (btn) btn.disabled = true;
 
             try {
                 const res = await fetch('/api/generate-policy-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(window.lastCommercialData)
+                    body: JSON.stringify(reportData)
                 });
 
                 if (!res.ok) {
@@ -379,7 +600,7 @@
                 alert("AI 리포트 생성 중 오류: " + err.message);
                 modal.classList.add('hidden');
             } finally {
-                btn.disabled = false;
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -396,13 +617,14 @@
         }
 
         loadSpots();
+        updateSpotDiagnostic();
     </script>
 
     <!-- 📑 AI 정책 제언서 팝업 모달 -->
-    <div id="reportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
+    <div id="reportModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4" style="z-index: 99999 !important;">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-fade-in border border-gray-200">
             <!-- 모달 헤더 -->
-            <div class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-4 flex justify-between items-center">
+            <div class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-4 flex justify-between items-center shadow">
                 <div class="flex items-center space-x-2">
                     <span class="text-xl">📑</span>
                     <div>
