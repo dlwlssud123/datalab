@@ -301,13 +301,13 @@ async def generate_policy_report(req: PolicyReportRequest):
 
 [실측 데이터 및 시뮬레이션 지표]
 1. 대상 거점: 거제시 {req.town_name} [{req.spot_name}]
-   - 데이터랩 팩트: 외지인 Tmap 검색 순위 거제시 전체 1위 명소
+   - 데이터랩 팩트: 한국관광 데이터랩 실측 인기 명소 (Tmap 최상위권)
 2. [축 1: 교통 인프라 TII 진단 및 시뮬레이션]
-   - 현황: 시내버스 55번 단일 노선, 실측 배차 120분 (TII 교통고립도 {req.original_tii}로 거제시 최고 위험군)
-   - 셔틀 정책 투입: 도심(고현터미널) ↔ 남부면 직통 DRT 관광 셔틀 투입
+   - 현황: 주요 노선 배차 {req.original_interval}분 공백 (TII 교통고립도 {req.original_tii})
+   - 셔틀 정책 투입: 도심(고현터미널) ↔ {req.town_name} 직통 관광 셔틀 투입
    - 효과: 배차간격 {req.original_interval}분 → {req.new_interval}분 ({interval_saved_min}분 대폭 단축), TII 고립도 {req.original_tii} → {req.simulated_tii} ({tii_improve_pct}% 개선)
 3. [축 2: 상권 다양성 CEI 진단 및 시뮬레이션]
-   - 현황: 기존 상권 다양성 지수(CEI) {req.original_cei} (단순 숙박·횟집 과밀로 관광객 즉시 이탈)
+   - 현황: 기존 상권 다양성 지수(CEI) {req.original_cei} (획일화·편중 상권으로 관광객 조기 이탈)
    - 상권 정책 투입: 버스 정류장 반경 공실 점포에 '{req.category_name}' {req.store_count}개소 청년 창업 임대료 지원
    - 효과: 상권 엔트로피(CEI) {req.original_cei} → {req.simulated_cei} (+{req.cei_change_percent}% 다양화)
 4. [축 3: 머신러닝(NumPy Ridge) 체류시간 통합 예측]
@@ -316,10 +316,10 @@ async def generate_policy_report(req: PolicyReportRequest):
    - 거제시 평균 체류시간(기존 2,392.8분)과의 강력한 시너지 창출
 
 [작성 요구사항]
-- **문서 제목**: 「거제시 TII×CEI 융합형 외곽 관광지 활성화 긴급 정책 제언서」
+- **문서 제목**: 「거제시 {req.town_name}({req.spot_name}) TII×CEI 융합형 관광 활성화 긴급 정책 제언서」
 - **구체적 목차 구성**:
-  - **Ⅰ. 추진 배경 및 실측 현황 분석** (외지인 검색 1위이나 극심한 교통 고립 TII 0.95 및 상권 획일화 CEI 0.65의 복합 한계)
-  - **Ⅱ. 교통-상권 동시 연계 핀셋 정책 실행안** (1. 주말 DRT 관광 셔틀 직통 노선 개설 / 2. 정류장 반경 공실 상가 청년 로컬 크리에이터 조례 제정 및 임대료 보조)
+  - **Ⅰ. 추진 배경 및 실측 현황 분석** (데이터랩 검색 상위권이나 교통 고립 TII {req.original_tii} 및 상권 획일화 CEI {req.original_cei}의 복합 한계)
+  - **Ⅱ. 교통-상권 동시 연계 핀셋 정책 실행안** (1. 주말 관광 셔틀 직통 노선 개설 / 2. 정류장 반경 공실 상가 청년 로컬 크리에이터 조례 제정 및 임대료 보조)
   - **Ⅲ. 머신러닝 예측 성과 및 경제적 파급효과** (체류시간 +{round(req.expected_stay_increase_min/60, 1)}시간 증가, 관광객 소비액 증대, 자가용 분산 탄소 저감)
   - **Ⅳ. 향후 행정 로드맵 및 예산 확보 방안** (지방소멸대응기금 및 국토부 스마트시티 챌린지 공모 연계)
 - 중간에 말이 끊기지 않도록 결론(제언)까지 완전히 마무리하여 출력해 주세요.

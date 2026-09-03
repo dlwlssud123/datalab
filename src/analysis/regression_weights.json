@@ -1,0 +1,10 @@
+{
+  "model_name": "NumPy_Ridge_Tourism_Stay_Predictor",
+  "r2_score": 0.9832,
+  "rmse": 9.95,
+  "coef_interval": 2.13,
+  "coef_cei": 411.77,
+  "coef_vacancy": 121.89,
+  "intercept": 10.06,
+  "formula": "ΔStay = 2.13*ΔInterval + 411.8*ΔCEI + 121.9*ΔVacancy + 10.06"
+}
