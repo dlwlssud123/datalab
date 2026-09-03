@@ -92,7 +92,7 @@ async def get_spots():
     """
     거제시 관광지 데이터 목록 반환 API
     """
-    return SPOTS_DATA
+    return load_processed_spots()
 
 # 7. 헬스체크 API 엔드포인트
 @app.get("/api/health")
@@ -128,8 +128,9 @@ async def run_simulation(req: SimulationRequest):
     셔틀버스 투입 대수에 따른 배차간격 단축 및 기대효과를 계산하는 시뮬레이터 API
     """
     # 1. 출발지 및 대상 목적지 데이터 찾기
-    hub_spot = next(s for s in SPOTS_DATA if s["id"] == "gohyeon_terminal")
-    target_spot = next((s for s in SPOTS_DATA if s["id"] == req.target_spot_id), None)
+    spots = load_processed_spots()
+    hub_spot = next(s for s in spots if s["id"] == "gohyeon_terminal")
+    target_spot = next((s for s in spots if s["id"] == req.target_spot_id), None)
     
     if not target_spot:
         raise HTTPException(status_code=404, detail="Target spot not found.")
