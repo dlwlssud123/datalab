@@ -277,7 +277,7 @@ async def generate_policy_report(req: PolicyReportRequest):
     from dotenv import load_dotenv
     from openai import OpenAI
 
-    load_dotenv(BASE_DIR.parent.parent / ".env")
+    load_dotenv(BASE_DIR.parent.parent / ".env", override=True)
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = os.getenv("OPENAI_BASE_URL", "https://factchat-cloud.mindlogic.ai/v1/gateway")
 

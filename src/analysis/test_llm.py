@@ -3,9 +3,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# 1. .env 로드
+# 1. .env 로드 (override=True로 시스템 전역 환경변수보다 우선 적용)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # 2. 클라이언트 초기화
 client = OpenAI(
