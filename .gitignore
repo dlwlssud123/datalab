@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,6 +9,7 @@ data/
 # Environments & Secrets
 .env
 .env.*
+!.env.example
 .venv/
 env/
 venv/

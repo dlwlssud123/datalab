@@ -10,6 +10,12 @@ from openpyxl import load_workbook
 # Windows 콘솔 한글/이모지 출력 인코딩 설정
 sys.stdout.reconfigure(encoding="utf-8")
 
+# SGIS 통계청 OpenAPI 기반 좌표 리졸버 임포트
+try:
+    from src.analysis.sgis_geocoder import resolve_spot_coordinates
+except ImportError:
+    from sgis_geocoder import resolve_spot_coordinates
+
 # 1. 경로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 RAW_DIR = BASE_DIR / "data" / "raw"
@@ -401,6 +407,12 @@ def build_final_dataset(df_spots_rank, town_entropy, bus_metrics):
     ]
 
     for spot in spots_master:
+        # SGIS 통계청 OpenAPI / 도로명주소 기반 정밀 위경도 동적 해결
+        lat, lng, coord_source = resolve_spot_coordinates(spot["id"])
+        spot["lat"] = lat
+        spot["lng"] = lng
+        spot["coord_source"] = coord_source
+
         metric = bus_metrics.get(spot["id"])
         if not metric:
             continue

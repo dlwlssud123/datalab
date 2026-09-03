@@ -55,6 +55,7 @@ class TourismSpot(BaseModel):
     tii_raw_score: Optional[float] = None
     tii_log_score: Optional[float] = None
     tii_formula_basis: Optional[str] = None
+    coord_source: Optional[str] = None
     
 PROCESSED_CSV_PATH = BASE_DIR.parent.parent / "data" / "processed" / "geoje_real_spots.csv"
    
