@@ -162,15 +162,53 @@
                                     </div>
                                 </div>
 
-                                <!-- 3. 상권 업종 실태 -->
+                                <!-- 3. 상권 업종 실태 (반경 500m~1km 보행 상권 벨트) -->
                                 <div class="bg-purple-50/70 p-2 rounded border border-purple-100 space-y-1">
                                     <div class="font-bold text-purple-900 flex items-center justify-between text-[11px]">
-                                        <span>🏪 현재 상권 업종 실태</span>
-                                        <span class="text-[10px] text-purple-700 font-bold" id="commEntropyTag">CEI 0.65</span>
+                                        <span>🏪 관광지 반경 500m~1km 상권 실태</span>
+                                        <span class="text-[10px] text-purple-700 font-bold" id="commEntropyTag">CEI 0.64</span>
                                     </div>
-                                    <div class="text-gray-600">• 등록 점포: <strong class="text-gray-800" id="commTotalStores">184개소</strong></div>
-                                    <div class="text-gray-600">• 과밀 업종: <strong class="text-amber-700" id="commOvercrowded">횟집 58.2% + 숙박 27.7%</strong></div>
-                                    <div class="text-gray-600">• 결핍 업종: <strong class="text-red-600" id="commDeficit">문화·체험·청년공방 1.1%</strong></div>
+                                    <div class="text-gray-600">• 상권 범위: <strong>도보 7~15분 권역 (진입로·포구 마을)</strong></div>
+                                    <div class="text-gray-600">• 등록 점포: <strong class="text-gray-800" id="commTotalStores">142개소</strong></div>
+                                    <div class="text-gray-600">• 과밀 업종: <strong class="text-amber-700" id="commOvercrowded">오션뷰 카페 64.1% 편중</strong></div>
+                                    <div class="text-gray-600">• 결핍 업종: <strong class="text-red-600" id="commDeficit">로컬 굿즈·체험 3.5%</strong></div>
+                                </div>
+                            </div>
+
+                            <!-- 💡 [빅데이터 상권 결핍 진단 & 최적 입점 추천 가이드 (500m~1km)] -->
+                            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-2.5 rounded-lg border border-purple-200 shadow-sm space-y-2 text-[11px]">
+                                <div class="flex justify-between items-center border-b border-purple-200 pb-1">
+                                    <span class="font-bold text-purple-950 flex items-center">
+                                        <span class="text-sm mr-1">🔍</span>
+                                        <span>실측 기반 500m~1km 상권 결핍 & 추천 진단</span>
+                                    </span>
+                                    <span class="text-[10px] bg-purple-200/60 text-purple-800 px-1.5 py-0.5 rounded font-bold" id="recBadge">
+                                        카페 편중률 64.1%
+                                    </span>
+                                </div>
+
+                                <!-- 1. 부족한 상권 (결핍 요인) -->
+                                <div class="bg-white p-2 rounded border border-purple-100 space-y-1">
+                                    <div class="text-[10px] font-bold text-red-600 flex items-center">
+                                        <span>⚠️ 현재 가장 결핍된 상권 (조기 이탈 원인)</span>
+                                    </div>
+                                    <div class="text-gray-700 leading-tight space-y-0.5" id="deficitItems">
+                                        <!-- JS에서 채움 -->
+                                    </div>
+                                </div>
+
+                                <!-- 2. 최적 추천 업종 & 기대 시너지 -->
+                                <div class="bg-white p-2 rounded border border-indigo-100 space-y-1">
+                                    <div class="text-[10px] font-bold text-indigo-700 flex justify-between items-center">
+                                        <span>✨ 500m~1km 공실 입점 최우선 권장 업종</span>
+                                        <span class="text-[10px] text-emerald-600 font-extrabold" id="recSynergyScore">시너지 +4.9h</span>
+                                    </div>
+                                    <div class="text-gray-800 font-extrabold text-xs" id="recBestCategory">
+                                        <!-- 추천 업종명 -->
+                                    </div>
+                                    <div class="text-[10px] text-gray-500 leading-normal" id="recReason">
+                                        <!-- 추천 이유 -->
+                                    </div>
                                 </div>
                             </div>
 
@@ -183,9 +221,11 @@
                                     oninput="document.getElementById('fusionShuttleVal').innerText = this.value + '대'">
                             </div>
 
-                            <!-- 정책 2: 상권 인프라 -->
+                            <!-- 정책 2: 상권 인프라 (관광지 반경 500m~1km) -->
                             <div>
-                                <label class="block font-bold text-gray-800 mb-1">3. [상권 정책] 정류장 연계 공실 지원 업종:</label>
+                                <label class="block font-bold text-gray-800 mb-1">
+                                    3. [상권 정책] 관광지 반경 500m~1km 보행 벨트 입점 지원:
+                                </label>
                                 <select id="fusionStoreCategory" class="w-full p-1.5 border rounded bg-white text-gray-800 font-medium">
                                     <option value="craft_shop">🟢 [로컬 특화] 청년 해양 공방 & 로컬 굿즈 편집숍</option>
                                     <option value="local_fnb">🟢 [로컬 특화] 거제 특산물 F&B (유자/해산물 타파스)</option>
@@ -196,7 +236,7 @@
 
                             <div>
                                 <label class="block font-bold text-gray-800 mb-1">
-                                    4. 지원 점포 수: <span id="fusionStoreVal" class="text-indigo-600 font-bold">2개소</span>
+                                    4. 500m~1km 권역 지원 점포 수: <span id="fusionStoreVal" class="text-indigo-600 font-bold">2개소</span>
                                 </label>
                                 <input type="range" id="fusionStoreCount" min="1" max="5" value="2" class="w-full cursor-pointer"
                                     oninput="document.getElementById('fusionStoreVal').innerText = this.value + '개소'">
@@ -482,12 +522,77 @@
             }
         };
 
+        // 🔍 거제시 거점별 500m~1km 보행 상권 결핍 분석 & 최적 추천 업종 DB
+        const SPOT_COMMERCIAL_ANALYSIS = {
+            "maemi_castle": {
+                badge: "카페 편중률 64.1%",
+                deficits: [
+                    "• <strong>로컬 스토리텔링 굿즈·기념품 숍</strong> (결핍도 95%): 성곽 관람 후 기념품 구매처 전무",
+                    "• <strong>실내 문화·체험 공방</strong> (결핍도 92%): 야외 포토존 외 우천/혹서기 보행 쉼터 결핍"
+                ],
+                bestCategory: "🟢 청년 해양 공방 & 로컬 굿즈 편집숍",
+                categoryVal: "craft_shop",
+                synergy: "체류시간 +4.9시간 견인",
+                reason: "바다 조망 카페에만 편중된 2030 관광객에게 '체험+기념품 구매' 2차 보행 소비 동선을 제공하여 체류시간 극대화."
+            },
+            "wind_hill": {
+                badge: "횟집·숙박 과밀률 85.9%",
+                deficits: [
+                    "• <strong>청년 타깃 트렌디 F&B</strong> (결핍도 96%): 횟집 일색으로 2030 단품 식음료(타파스/디저트) 결핍",
+                    "• <strong>독립서점 & 감성 쉼터</strong> (결핍도 98%): 바람의 언덕 조망 후 여유롭게 머물 힐링 문화공간 전무"
+                ],
+                bestCategory: "🟢 거제 특산물 F&B (유자/해양 타파스 바)",
+                categoryVal: "local_fnb",
+                synergy: "체류시간 +4.9시간 견인",
+                reason: "사진만 찍고 빠져나가는 당일치기 관광객을 도장포 포구 1km 보행권 내 로컬 식음료 공간에 안착시켜 소비 지출 증대."
+            },
+            "hakdong_pebble": {
+                badge: "비수기 공실률 14.2%",
+                deficits: [
+                    "• <strong>사계절 복합 문화공간</strong> (결핍도 89%): 여름 해수욕 외 비수기 방문 유인 시설 전무",
+                    "• <strong>로컬 크래프트 숍</strong> (결핍도 85%): 몽돌 테마 업사이클링 공예 시설 부족"
+                ],
+                bestCategory: "🟢 독립 서점 & 로컬 복합 문화공간",
+                categoryVal: "culture_book",
+                synergy: "체류시간 +3.8시간 견인",
+                reason: "해수욕장 비수기(가을~봄)에도 관광객이 유입될 수 있는 실내 문화 앵커 시설을 몽돌해변 1km 배후에 구축."
+            },
+            "geoje_jungle_dome": {
+                badge: "상권 연계성 12%",
+                deficits: [
+                    "• <strong>온실 테마 연계 카페/체험</strong> (결핍도 90%): 식물원 관람 후 면소재지 상권으로 이어지는 연결고리 부재",
+                    "• <strong>농특산물 파머스 마켓</strong> (결핍도 84%): 거제면 농산물 가공 굿즈 판매처 부족"
+                ],
+                bestCategory: "🟢 거제 특산물 F&B (식물원 연계 디저트)",
+                categoryVal: "local_fnb",
+                synergy: "체류시간 +3.5시간 견인",
+                reason: "가족 단위 방문객의 돔 관람 후 즉시 귀가 현상을 차단하고, 면소재지 로컬 디저트·파머스 마켓 소비로 연결."
+            }
+        };
+
+        // 상권 결핍 및 추천 가이드 갱신 함수
+        function updateCommercialAnalysis(spotId) {
+            const data = SPOT_COMMERCIAL_ANALYSIS[spotId] || SPOT_COMMERCIAL_ANALYSIS["maemi_castle"];
+            
+            document.getElementById('recBadge').innerText = data.badge;
+            document.getElementById('deficitItems').innerHTML = data.deficits.join('<br>');
+            document.getElementById('recBestCategory').innerText = data.bestCategory;
+            document.getElementById('recSynergyScore').innerText = data.synergy;
+            document.getElementById('recReason').innerText = data.reason;
+
+            // 추천된 업종을 아래 셀렉트 박스에 자동 선택 동기화!
+            const catSelect = document.getElementById('fusionStoreCategory');
+            if (catSelect) {
+                catSelect.value = data.categoryVal;
+            }
+        }
+
         // 거점 선택 시 상세 현황판 실시간 갱신 함수 (버스 + 택시 + 상권)
         function updateSpotDiagnostic() {
             const sel = document.getElementById('fusionTarget');
             if (!sel) return;
             const spotId = sel.value;
-            const profile = REAL_SPOT_PROFILES[spotId] || REAL_SPOT_PROFILES["wind_hill"];
+            const profile = REAL_SPOT_PROFILES[spotId] || REAL_SPOT_PROFILES["maemi_castle"];
 
             // 1. 헤더
             document.getElementById('detailSpotTitle').innerText = profile.title;
@@ -512,6 +617,9 @@
             document.getElementById('commOvercrowded').innerText = profile.overcrowded;
             document.getElementById('commDeficit').innerText = profile.deficit;
             document.getElementById('commEntropyTag').innerText = profile.ceiTag;
+
+            // 5. 500m~1km 상권 결핍 & 최적 추천 갱신
+            updateCommercialAnalysis(spotId);
         }
 
         // 📊 거제시 7대 거점 비교 현황표 렌더링
@@ -664,14 +772,14 @@
 
                 document.getElementById('fusionResultCard').classList.remove('hidden');
                 document.getElementById('fusionSummary').innerText = 
-                    `[${spotName}] 주말 셔틀 ${shuttleCount}대 투입 + '${commData.selected_category_name}' ${storeCount}개소 연계 지원 시, ` +
+                    `[${spotName}] 주말 직통 셔틀 ${shuttleCount}대 투입 + 반경 500m~1km 보행 상권 벨트 내 '${commData.selected_category_name}' ${storeCount}개소 입점 지원 시, ` +
                     `교통 단절이 해소되고 상권이 다변화되어 체류시간이 획기적으로 증가합니다.`;
 
                 document.getElementById('resFusionTii').innerText = `${origTii} → ${newTii} (-${tiiImprovePct}%)`;
                 document.getElementById('resFusionInterval').innerText = `배차 ${origInterval}분 → ${newInterval}분`;
 
                 document.getElementById('resFusionCei').innerText = `${origCei} → ${newCei} (+${commData.cei_change_percent}%)`;
-                document.getElementById('resFusionVacant').innerText = `공실 ${storeCount}개소 청년 창업`;
+                document.getElementById('resFusionVacant').innerText = `500m~1km 내 공실 ${storeCount}개소 창업`;
 
                 document.getElementById('resFusionStay').innerText = `+${totalStayGain}분 (약 +${(totalStayGain / 60).toFixed(1)}시간)`;
                 document.getElementById('resFusionFormula').innerText = `📐 회귀식: ΔStay = 2.13×${deltaInterval}m + 411.8×${deltaCei.toFixed(2)} + 121.9×ΔV + 10.06`;
