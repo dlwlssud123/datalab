@@ -25,7 +25,6 @@ REGRESSION_WEIGHTS = ROOT_DIR / "src" / "analysis" / "regression_weights.json"
 PROCESSED_DIR = ROOT_DIR / "data" / "processed"
 SPOTS_CSV = PROCESSED_DIR / "geoje_real_spots.csv"
 BUS_CSV = PROCESSED_DIR / "bus_schedule_summary.csv"
-VACANCY_CSV = PROCESSED_DIR / "vacancy_rate_summary.csv"
 
 SELECTED_SPOT_TO_TOWN = {
     "maemi_castle": "장목면",
@@ -43,29 +42,28 @@ REQUIRED_SPOT_COLUMNS = {
     "visitors_monthly",
     "tmap_search_rank",
     "bus_interval_min",
+    "bus_routes_count",
+    "walk_distance_m",
     "tii_score",
     "cei_score",
     "status",
     "description",
-    "vacancy_rate_pct",
-    "vacancy_market_name",
-    "vacancy_rate_source_url",
+    "coord_source",
+    "tii_demand_pressure",
+    "bus_frequency_per_hour",
+    "last_mile_access_index",
+    "tii_supply_index",
+    "tii_raw_score",
+    "tii_formula_basis",
 }
 
 REQUIRED_BUS_COLUMNS = {
     "spot_id",
+    "bus_stop_basis",
     "bus_interval_min",
     "bus_routes_count",
+    "observed_runs_count",
     "bus_schedule_source",
-}
-
-REQUIRED_VACANCY_COLUMNS = {
-    "spot_id",
-    "vacancy_market_name",
-    "vacancy_rate_quarter",
-    "vacancy_rate_pct",
-    "vacancy_linkage_level",
-    "vacancy_rate_source_url",
 }
 
 
@@ -99,30 +97,30 @@ def check_python_compile() -> None:
     ok("Python 문법 검사 통과")
 
 
-def check_processed_files() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    for path in [SPOTS_CSV, BUS_CSV, VACANCY_CSV, REGRESSION_WEIGHTS, INDEX_HTML]:
+def check_processed_files() -> tuple[pd.DataFrame, pd.DataFrame]:
+    for path in [SPOTS_CSV, BUS_CSV, REGRESSION_WEIGHTS, INDEX_HTML]:
         assert_true(path.exists(), f"missing required artifact: {path}")
 
     spots = pd.read_csv(SPOTS_CSV)
     bus = pd.read_csv(BUS_CSV)
-    vacancy = pd.read_csv(VACANCY_CSV)
 
     assert_true(len(spots) >= 7, f"geoje_real_spots.csv should contain at least 7 rows, got {len(spots)}")
     assert_true(REQUIRED_SPOT_COLUMNS.issubset(spots.columns), f"spots CSV missing columns: {sorted(REQUIRED_SPOT_COLUMNS - set(spots.columns))}")
     assert_true(REQUIRED_BUS_COLUMNS.issubset(bus.columns), f"bus CSV missing columns: {sorted(REQUIRED_BUS_COLUMNS - set(bus.columns))}")
-    assert_true(REQUIRED_VACANCY_COLUMNS.issubset(vacancy.columns), f"vacancy CSV missing columns: {sorted(REQUIRED_VACANCY_COLUMNS - set(vacancy.columns))}")
     assert_true(spots["id"].is_unique, "spot id must be unique")
+    assert_true(spots["lat"].between(33, 36).all(), "lat values must be in the Geoje/Korea range")
+    assert_true(spots["lng"].between(127, 130).all(), "lng values must be in the Geoje/Korea range")
     assert_true(spots["bus_interval_min"].min() > 0, "bus_interval_min must be positive")
     assert_true(spots["tii_score"].between(0, 1).all(), "tii_score must be between 0 and 1")
     assert_true(spots["cei_score"].between(0, 1).all(), "cei_score must be between 0 and 1")
-    assert_true(spots["vacancy_rate_pct"].notna().all(), "all spots must have vacancy_rate_pct")
+    assert_true((bus["bus_schedule_source"].isin(["excel_auto", "fallback"])).all(), "bus_schedule_source must be excel_auto or fallback")
 
     weights = json.loads(REGRESSION_WEIGHTS.read_text(encoding="utf-8"))
-    for key in ["coef_interval", "coef_cei", "coef_vacancy", "intercept", "formula"]:
+    for key in ["coef_interval", "coef_cei", "coef_vacancy", "intercept", "formula", "model_scope"]:
         assert_true(key in weights, f"regression_weights.json missing key: {key}")
 
-    ok("processed CSV/회귀 가중치 산출물 검사 통과")
-    return spots, bus, vacancy
+    ok("현재 MVP 산출물 검사 통과")
+    return spots, bus
 
 
 def check_api_contract(spots_csv: pd.DataFrame) -> None:
@@ -130,6 +128,7 @@ def check_api_contract(spots_csv: pd.DataFrame) -> None:
 
     client = TestClient(app)
     health = assert_status(client.get("/api/health"), 200, "GET /api/health")
+    assert_true(health.get("status") == "ok", "health.status must be ok")
     assert_true(health.get("spots_loaded", 0) >= 7, "health.spots_loaded must be at least 7")
 
     spots = assert_status(client.get("/api/spots"), 200, "GET /api/spots")
@@ -173,7 +172,6 @@ def check_api_contract(spots_csv: pd.DataFrame) -> None:
             abs(float(response["original_cei"]) - float(spot_by_id[spot_id]["cei_score"])) < 1e-9,
             f"commercial CEI mismatch for {spot_id}/{town}",
         )
-        assert_true("original_vacancy_rate_pct" in response, f"commercial response missing vacancy field for {town}")
 
     assert_status(
         client.post(
@@ -239,6 +237,14 @@ def check_frontend_backend_consistency(spots_csv: pd.DataFrame) -> None:
     index_text = INDEX_HTML.read_text(encoding="utf-8")
     spot_by_id = spots_csv.set_index("id").to_dict(orient="index")
 
+    for required_snippet in [
+        "fetch('/api/spots')",
+        "fetch('/api/simulate'",
+        "fetch('/api/simulate-commercial'",
+        "fetch('/api/generate-policy-report'",
+    ]:
+        assert_true(required_snippet in index_text, f"frontend missing API snippet: {required_snippet}")
+
     for spot_id in SELECTED_SPOT_TO_TOWN:
         profile = extract_profile_values(index_text, spot_id)
         spot = spot_by_id[spot_id]
@@ -246,21 +252,13 @@ def check_frontend_backend_consistency(spots_csv: pd.DataFrame) -> None:
         assert_true(abs(profile["origTii"] - float(spot["tii_score"])) < 1e-9, f"frontend origTii mismatch for {spot_id}")
         assert_true(abs(profile["origCei"] - float(spot["cei_score"])) < 1e-9, f"frontend origCei mismatch for {spot_id}")
 
-    for required_snippet in [
-        "currentSpotData?.bus_interval_min",
-        "commData.vacancy_change_pctp",
-        "original_vacancy_rate_pct",
-        "vacancy_rate_basis",
-    ]:
-        assert_true(required_snippet in index_text, f"frontend missing API-linked snippet: {required_snippet}")
-
     ok("프론트-백엔드 기준값 정합성 검사 통과")
 
 
 def main() -> int:
     try:
         check_python_compile()
-        spots, _bus, _vacancy = check_processed_files()
+        spots, _bus = check_processed_files()
         check_api_contract(spots)
         check_frontend_backend_consistency(spots)
     except ValidationError as e:

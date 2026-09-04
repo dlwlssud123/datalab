@@ -1,12 +1,11 @@
 import json
 import pandas as pd
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from typing import Dict, List, Optional
+from pydantic import BaseModel, Field
 
 # 1. api 앱 인스턴스 생성
 app = FastAPI(
@@ -58,6 +57,13 @@ class TourismSpot(BaseModel):
     coord_source: Optional[str] = None
     
 PROCESSED_CSV_PATH = BASE_DIR.parent.parent / "data" / "processed" / "geoje_real_spots.csv"
+TOWN_REPRESENTATIVE_SPOTS = {
+    "남부면": "wind_hill",
+    "장목면": "maemi_castle",
+    "동부면": "hakdong_pebble",
+    "고현동": "gohyeon_market",
+    "거제면": "geoje_jungle_dome",
+}
    
 def load_processed_spots():
     """
@@ -101,12 +107,16 @@ async def health_check():
     """
     헬스체크 API 엔드포인트
     """
-    return {"status": "ok", "message": "Local Synergy Maker API is running."}
+    return {
+        "status": "ok",
+        "message": "Local Synergy Maker API is running.",
+        "spots_loaded": len(load_processed_spots()),
+    }
 
 # 8. 시뮬레이션 요청 & 응답 Pydantic 모델 정의
 class SimulationRequest(BaseModel):
     target_spot_id: str # 목적지 ID
-    shuttle_count: int # 투입할 셔틀버스 대수 (1~5)
+    shuttle_count: int = Field(ge=1, le=5) # 투입할 셔틀버스 대수 (1~5)
     
 class SimulationResponse(BaseModel):
     spot_name: str           # 대상 관광지 이름
@@ -130,15 +140,18 @@ async def run_simulation(req: SimulationRequest):
     """
     # 1. 출발지 및 대상 목적지 데이터 찾기
     spots = load_processed_spots()
-    hub_spot = next(s for s in spots if s["id"] == "gohyeon_terminal")
+    hub_spot = next((s for s in spots if s["id"] == "gohyeon_terminal"), None)
     target_spot = next((s for s in spots if s["id"] == req.target_spot_id), None)
     
+    if not hub_spot:
+        raise HTTPException(status_code=500, detail="Hub spot data is missing.")
+
     if not target_spot:
         raise HTTPException(status_code=404, detail="Target spot not found.")
     
     # 2. 시뮬레이션 수식 계산
     orig_interval = target_spot["bus_interval_min"]
-    shuttle_count = max(1, req.shuttle_count)
+    shuttle_count = req.shuttle_count
     
     # 셔틀 투입에 따른 신규 배차간격 계산 (기본 편도 35분 기준 왕복 70분 / 셔틀 대수)
     round_trip_min = 70
@@ -187,7 +200,7 @@ async def run_simulation(req: SimulationRequest):
 class CommercialSimRequest(BaseModel):
     target_town: str         # 대상 지역 (예: '남부면', '장목면')
     store_category: str      # 입점 지원 업종 ('local_fnb', 'craft_shop', 'culture_book', 'franchise_copy')
-    new_store_count: int     # 입점 점포 수 (1~5개)
+    new_store_count: int = Field(ge=1, le=5)     # 입점 점포 수 (1~5개)
     
 class CommercialSimResponse(BaseModel):
     town_name: str           # 지역명
@@ -211,32 +224,48 @@ if WEIGHTS_PATH.exists():
     except Exception as e:
         print(f"Warning: Failed to load regression weights: {e}")
 
+
+def get_town_cei_map() -> Dict[str, float]:
+    spots = load_processed_spots()
+    spot_by_id = {spot["id"]: spot for spot in spots}
+    town_cei = {}
+
+    for town, spot_id in TOWN_REPRESENTATIVE_SPOTS.items():
+        spot = spot_by_id.get(spot_id)
+        if spot and spot.get("cei_score") is not None:
+            town_cei[town] = float(spot["cei_score"])
+
+    town_cei.setdefault("남부면", 0.65)
+    town_cei.setdefault("장목면", 0.64)
+    town_cei.setdefault("동부면", 0.63)
+    town_cei.setdefault("고현동", 0.77)
+    town_cei.setdefault("거제면", 0.82)
+    return town_cei
+
+
 # 11. 상권 다양성 시뮬레이터 POST API (머신러닝 회귀식 결합)
 @app.post("/api/simulate-commercial", response_model = CommercialSimResponse)
 async def run_commercial_simulation(req: CommercialSimRequest):
     """
     공실 상가에 로컬 특화 업종 입점 시 상권 엔트로피 및 체류시간 변화를 머신러닝(NumPy Ridge)으로 시뮬레이션
     """
-    town_base_cei = {
-        "남부면": 0.65,  # 바람의 언덕 (숙박/한식 과밀)
-        "장목면": 0.64,  # 매미성
-        "동부면": 0.63,  # 몽돌해변
-        "고현동": 0.77   # 도심
-    }
-    
-    orig_cei = town_base_cei.get(req.target_town, 0.65)
-    store_count = max(1, req.new_store_count)
-    
     category_meta = {
         "local_fnb": ("로컬 특산물 F&B (거제 유자/해산물 타파스 등)", 0.05, 0.02),
         "craft_shop": ("청년 해양 공방 & 로컬 굿즈 편집숍", 0.06, 0.03),
         "culture_book": ("독립 서점 & 로컬 복합 문화공간", 0.07, 0.04),
         "franchise_copy": ("전국 복제 프랜차이즈 / 무인 사진관", -0.03, 0.0)
     }
-    
-    cat_name, entropy_weight, vacancy_drop_rate = category_meta.get(
-        req.store_category, ("기타 로컬 숍", 0.03, 0.01)
-    )
+
+    town_base_cei = get_town_cei_map()
+    if req.target_town not in town_base_cei:
+        raise HTTPException(status_code=400, detail="Unknown target town.")
+
+    if req.store_category not in category_meta:
+        raise HTTPException(status_code=400, detail="Unknown store category.")
+
+    orig_cei = town_base_cei[req.target_town]
+    store_count = req.new_store_count
+    cat_name, entropy_weight, vacancy_drop_rate = category_meta[req.store_category]
     
     # 신규 cei 계산 (결핍 업종은 상승, 복제 업종은 하락)
     delta_cei = entropy_weight * store_count
@@ -296,16 +325,16 @@ async def run_commercial_simulation(req: CommercialSimRequest):
 class PolicyReportRequest(BaseModel):
     town_name: str
     spot_name: Optional[str] = "바람의 언덕 / 신선대"
-    original_interval: int = 120
-    new_interval: int = 25
-    original_tii: float = 0.95
-    simulated_tii: float = 0.18
+    original_interval: int = Field(default=120, ge=1)
+    new_interval: int = Field(default=25, ge=1)
+    original_tii: float = Field(default=0.95, ge=0, le=1)
+    simulated_tii: float = Field(default=0.18, ge=0, le=1)
     category_name: str
-    store_count: int
-    original_cei: float
-    simulated_cei: float
+    store_count: int = Field(ge=1, le=20)
+    original_cei: float = Field(ge=0, le=1)
+    simulated_cei: float = Field(ge=0, le=1)
     cei_change_percent: float
-    expected_stay_increase_min: int
+    expected_stay_increase_min: int = Field(ge=0)
 
 class PolicyReportResponse(BaseModel):
     report_markdown: str
@@ -382,4 +411,8 @@ async def generate_policy_report(req: PolicyReportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Gateway 호출 오류: {str(e)}")
+
+
+
+
 
